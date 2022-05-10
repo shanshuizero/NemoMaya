@@ -33,7 +33,14 @@ def connect_matrix_to_transform(src, obj):
     cmds.connectAttr(src, '%s.inputMatrix' % node_decompose)
 
     for attr in {'translate', 'rotate', 'scale'}:
-        cmds.connectAttr('{}.output{}'.format(node_decompose, attr.capitalize()), '{}.{}'.format(obj, attr))
+        source = '{}.output{}'.format(node_decompose, attr.capitalize())
+        dest = '{}.{}'.format(obj, attr)
+        if cmds.getAttr(dest, lock=True):
+            cmds.setAttr(dest, lock=False)
+            cmds.connectAttr(source, dest)
+            cmds.setAttr(dest, lock=True)
+        else:
+            cmds.connectAttr(source, dest)
 
 
 def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_mode):
@@ -113,7 +120,12 @@ def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_m
             if typename == 'Mat4':
                 connect_matrix_to_transform('{}.{}'.format(node, name), dest)
             else:
-                cmds.connectAttr('{}.{}'.format(node, name), dest)
+                if cmds.getAttr(dest, lock=True):
+                    cmds.setAttr(dest, lock=False)
+                    cmds.connectAttr('{}.{}'.format(node, name), dest)
+                    cmds.setAttr(dest, lock=True)
+                else:
+                    cmds.connectAttr('{}.{}'.format(node, name), dest)
         else:
             cmds.connectAttr('{}.{}'.format(obj, attr), '{}.{}'.format(node, name))
 

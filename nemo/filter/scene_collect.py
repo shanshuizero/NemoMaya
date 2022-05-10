@@ -116,8 +116,6 @@ def is_channel_box_driven(ctrl):
 
 
 def get_extra(ctrl):
-    if ctrl == 'IKArm_R':
-        return 'IKExtraArm_R'
     parent = cmds.listRelatives(ctrl, p=True)
     if not parent:
         return None
