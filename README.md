@@ -2,8 +2,6 @@
 
 💡 请务必设置环境变量NEMO_ROOT
 
-> 对于Linux系统，需要在打开Maya前设置`LD_LIBRARY_PATH`到`<NEMO_ROOT>/lib/<os>-<MayaVersion>/`，注意在Maya.env中设置无效会被覆盖
-
 - <NEMO_ROOT>/extern: 外部依赖
 - <NEMO_ROOT>/modules: 解析Maya文件所需的配置文件
 - <NEMO_ROOT>/nemo: 主体代码

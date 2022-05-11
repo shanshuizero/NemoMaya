@@ -1195,6 +1195,12 @@
           {"name": "envelope", "type": "Float"},
           {"name": "matrix", "type": "Mat4"},
           {
+            "name": "startAngle",
+            "outside_module": "deformTwist",
+            "type": "Float"
+          },
+          {"name": "endAngle", "outside_module": "deformTwist", "type": "Float"},
+          {
             "name": "lowBound",
             "outside_module": "deformTwist",
             "type": "Float"
@@ -1203,13 +1209,7 @@
             "name": "highBound",
             "outside_module": "deformTwist",
             "type": "Float"
-          },
-          {
-            "name": "startAngle",
-            "outside_module": "deformTwist",
-            "type": "Float"
-          },
-          {"name": "endAngle", "outside_module": "deformTwist", "type": "Float"}
+          }
         ]
       },
       {
