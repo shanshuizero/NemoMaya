@@ -710,7 +710,7 @@
     "methods": [
       {
         "is_dummy": true,
-        "ignores": ["envelope", "input[0].groupId", "scale"],
+        "ignores": ["envelope", "input[0].groupId", "scale", "distanceWeight"],
         "returns": [{"name": "outputGeometry[0]", "type": "Mesh"}],
         "parameters": [{"name": "input[0].inputGeometry", "type": "Mesh"}]
       }
@@ -829,13 +829,13 @@
   {
     "name": "follicle",
     "is_dag": true,
-    "ignores": ["inputWorldMatrix"],
     "methods": [
       {
         "name": "follicleTranslateMesh",
         "returns": [{"name": "outTranslate", "type": "Vec3"}],
         "parameters": [
           {"name": "inputMesh", "type": "Mesh"},
+          {"name": "inputWorldMatrix", "type": "Mat4"},
           {"name": "parameterU", "type": "Float"},
           {"name": "parameterV", "type": "Float"}
         ]
@@ -845,6 +845,7 @@
         "returns": [{"name": "outRotate", "type": "Vec3"}],
         "parameters": [
           {"name": "inputMesh", "type": "Mesh"},
+          {"name": "inputWorldMatrix", "type": "Mat4"},
           {"name": "parameterU", "type": "Float"},
           {"name": "parameterV", "type": "Float"}
         ]
@@ -854,6 +855,7 @@
         "returns": [{"name": "outTranslate", "type": "Vec3"}],
         "parameters": [
           {"name": "inputSurface", "type": "Surface"},
+          {"name": "inputWorldMatrix", "type": "Mat4"},
           {"name": "parameterU", "type": "Float"},
           {"name": "parameterV", "type": "Float"}
         ]
@@ -863,8 +865,35 @@
         "returns": [{"name": "outRotate", "type": "Vec3"}],
         "parameters": [
           {"name": "inputSurface", "type": "Surface"},
+          {"name": "inputWorldMatrix", "type": "Mat4"},
           {"name": "parameterU", "type": "Float"},
           {"name": "parameterV", "type": "Float"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "fourByFourMatrix",
+    "methods": [
+      {
+        "returns": [{"name": "output", "type": "Mat4"}],
+        "parameters": [
+          {"name": "in00", "type": "Float"},
+          {"name": "in01", "type": "Float"},
+          {"name": "in02", "type": "Float"},
+          {"name": "in03", "type": "Float"},
+          {"name": "in10", "type": "Float"},
+          {"name": "in11", "type": "Float"},
+          {"name": "in12", "type": "Float"},
+          {"name": "in13", "type": "Float"},
+          {"name": "in20", "type": "Float"},
+          {"name": "in21", "type": "Float"},
+          {"name": "in22", "type": "Float"},
+          {"name": "in23", "type": "Float"},
+          {"name": "in30", "type": "Float"},
+          {"name": "in31", "type": "Float"},
+          {"name": "in32", "type": "Float"},
+          {"name": "in33", "type": "Float"}
         ]
       }
     ]
@@ -1199,7 +1228,11 @@
             "outside_module": "deformTwist",
             "type": "Float"
           },
-          {"name": "endAngle", "outside_module": "deformTwist", "type": "Float"},
+          {
+            "name": "endAngle",
+            "outside_module": "deformTwist",
+            "type": "Float"
+          },
           {
             "name": "lowBound",
             "outside_module": "deformTwist",

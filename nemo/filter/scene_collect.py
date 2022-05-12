@@ -56,6 +56,15 @@ def list_channel_box(obj):
     return attributes
 
 
+def leaves_of_plug(plug):
+    if plug.isArray:
+        return sum([leaves_of_plug(plug.elementByLogicalIndex(i)) for i in plug.getExistingArrayAttributeIndices()], [])
+    elif plug.isCompound:
+        return sum([leaves_of_plug(plug.child(i)) for i in range(plug.numChildren())], [plug])
+    else:
+        return [plug]
+
+
 def get_history(plug):
     sources = cmds.listConnections(plug, p=True, s=True, d=False)
     if not sources:
@@ -63,15 +72,18 @@ def get_history(plug):
         maya_plug = om2.MGlobal.getSelectionListByName(plug).getPlug(0)
         node = om2.MFnDependencyNode(maya_plug.node())
         for attr in node.getAffectingAttributes(maya_plug.attribute()):
-            sources.append(node.findPlug(attr, True).name())
+            plug = node.findPlug(attr, True)
+            if '-1' in plug.name():
+                continue
+            sources.extend(x.name() for x in leaves_of_plug(plug))
 
     if not sources:
         return [plug]
 
-    return sum([get_history(x) for x in sources], [])
+    return sum([get_history(x) for x in set(sources)], [])
 
 
-def is_visibility_always_off(obj):
+def is_visibility_always_off(obj, controllers):
     if cmds.getAttr('{}.visibility'.format(obj)):
         return False
     plug = '{}.visibility'.format(obj)
@@ -81,6 +93,9 @@ def is_visibility_always_off(obj):
     for x in history:
         if x == plug:
             continue
+        node = x[:x.find('.')]
+        if node not in controllers:
+            continue
         if cmds.getAttr(x, lock=True):
             continue
         if cmds.getAttr(x, cb=True) or cmds.getAttr(x, k=True):
@@ -88,15 +103,15 @@ def is_visibility_always_off(obj):
     return True
 
 
-def is_world_visibility_always_off(obj):
+def is_world_visibility_always_off(obj, controllers):
     shapes = cmds.listRelatives(obj, shapes=True, ni=True)
-    if shapes and all(is_visibility_always_off(x) for x in shapes):
+    if shapes and all(is_visibility_always_off(x, controllers) for x in shapes):
         return True
 
     segments = cmds.ls(obj, long=True)[0].split('|')[1:]
     transforms = ['|'.join(segments[:i]) for i in range(1, 1 + len(segments))]
     for x in transforms:
-        if is_visibility_always_off(x):
+        if is_visibility_always_off(x, controllers):
             return True
     return False
 
@@ -133,7 +148,7 @@ def get_controllers(patterns, curve=True, surface=False, free=True, visible=True
         objects = cmds.ls(pattern, transforms=True)
         controllers = []
         for obj in objects:
-            shapes = cmds.listRelatives(obj, shapes=True, ni=True) or []
+            shapes = cmds.listRelatives(obj, shapes=True, ni=True, pa=True) or []
             pass_test = False
             for s in shapes:
                 if cmds.getAttr('{}.overrideEnabled'.format(s)) and cmds.getAttr('{}.overrideDisplayType'.format(s)):
@@ -150,7 +165,7 @@ def get_controllers(patterns, curve=True, surface=False, free=True, visible=True
         if free:
             controllers = [ctrl for ctrl in controllers if not is_channel_box_locked(ctrl)]
         if visible:
-            controllers = [ctrl for ctrl in controllers if not is_world_visibility_always_off(ctrl)]
+            controllers = [ctrl for ctrl in controllers if not is_world_visibility_always_off(ctrl, controllers)]
         results.extend(controllers)
     return results
 
