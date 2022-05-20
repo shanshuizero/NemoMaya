@@ -114,7 +114,6 @@
   {
     "name": "aimConstraint",
     "is_dag": true,
-    "inherit": "transform",
     "ignores": ["enableRestPosition"],
     "methods": [
       {
@@ -230,6 +229,32 @@
   {"name": "animCurveTL", "redirect": "animCurveUU"},
   {"name": "animCurveTA", "redirect": "animCurveUU"},
   {"name": "animCurveTU", "redirect": "animCurveUU"},
+  {
+    "name": "arcLengthDimension",
+    "is_dag": true,
+    "unit": "curveFromSurfaceIso",
+    "methods": [
+      {
+        "name": "arcLengthInU",
+        "returns": [{"name": "arcLength", "type": "Float"}],
+        "ignores": ["vParamValue"],
+        "parameters": [
+          {"name": "nurbsGeometry", "type": "Surface"},
+          {"name": "uParamValue", "type": "Float"}
+        ]
+      },
+      {
+        "name": "arcLengthInV",
+        "returns": [{"name": "arcLengthInV", "type": "Float"}],
+        "ignores": ["uParamValue"],
+        "parameters": [
+          {"name": "nurbsGeometry", "type": "Surface"},
+          {"name": "vParamValue", "type": "Float"}
+        ]
+      }
+    ]
+  },
+  {"name": "baseLattice", "is_dag": true, "inherit": "transform"},
   {
     "name": "bezierCurve",
     "is_dag": true,
@@ -709,10 +734,14 @@
     "ignores": ["weightList"],
     "methods": [
       {
-        "is_dummy": true,
-        "ignores": ["envelope", "input[0].groupId", "scale", "distanceWeight"],
+        "ignores": ["input[0].groupId"],
         "returns": [{"name": "outputGeometry[0]", "type": "Mesh"}],
-        "parameters": [{"name": "input[0].inputGeometry", "type": "Mesh"}]
+        "parameters": [
+          {"name": "input[0].inputGeometry", "type": "Mesh", "mutable": true},
+          {"name": "envelope", "type": "Float"},
+          {"name": "scale", "type": "Vec3"},
+          {"name": "distanceWeight", "type": "Float"}
+        ]
       }
     ]
   },
@@ -938,6 +967,7 @@
   {
     "name": "lattice",
     "is_dag": true,
+    "inherit": "transform",
     "ignores": ["tweak"],
     "filters": [
       {

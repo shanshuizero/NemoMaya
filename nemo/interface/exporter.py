@@ -28,7 +28,6 @@ from maya import cmds
 import os
 import json
 
-
 def get_nemo_root():
     if 'NEMO_ROOT' in os.environ:
         return os.environ['NEMO_ROOT']
@@ -85,13 +84,15 @@ class WidgetNemoExporter(QtWidgets.QWidget):
             pass
         return dayu_widgets.MLabel("Timestamp: {}".format(timestamp))
 
+    def check(self):
+        for x in cmds.ls(type='transform') + cmds.ls(type='joint'):
+            s = cmds.getAttr('{}.scale'.format(x))[0]
+            if abs(s[0]) < 1E-5 or abs(s[1]) < 1E-5 or abs(s[2]) < 1E-5:
+                raise RuntimeError("zero scale is not allowed:\n\t{}.scale is {}".format(x, s))
+
     def create_controllers(self):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(dayu_widgets.MDivider("Controllers"))
-
-        label_readme = dayu_widgets.MLabel("Nemo need to know all controllers in this rig. It could be configured by GLOB and filters.").secondary()
-        label_readme.setWordWrap(True)
-        layout.addWidget(label_readme)
 
         self.list_glob = QtWidgets.QListWidget()
         self.list_glob.setFixedHeight(60)
@@ -187,10 +188,6 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(dayu_widgets.MDivider("Shapes"))
 
-        label_readme = dayu_widgets.MLabel("Mehses under any group list here would be passed to animators.").secondary()
-        label_readme.setWordWrap(True)
-        layout.addWidget(label_readme)
-
         self.list_prefix = QtWidgets.QListWidget()
         self.list_prefix.setFixedHeight(60)
         layout.addWidget(self.list_prefix)
@@ -230,11 +227,6 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(dayu_widgets.MDivider("Export"))
 
-        label_readme = dayu_widgets.MLabel(
-            "All buttons above are merely for double check and can be skipped as long as the configuration is correct.").secondary()
-        label_readme.setWordWrap(True)
-        layout.addWidget(label_readme)
-
         self.text_name = dayu_widgets.MLineEdit("Dummy")
         label_head = dayu_widgets.MLabel(text="Name").mark().secondary()
         label_head.setAlignment(QtCore.Qt.AlignCenter)
@@ -251,10 +243,6 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         self.browser_dir_export.sig_folder_changed.connect(label_dir.setText)
         layout.addLayout(layout_dir)
 
-        label_readme = dayu_widgets.MLabel(
-            "Nemo could be extended to support in-house plug-ins by adding specifications under <NEMO_ROOT>/modules.").secondary()
-        label_readme.setWordWrap(True)
-        layout.addWidget(label_readme)
         import glob
         addons = [os.path.splitext(os.path.basename(x))[0] for x in glob.glob("{}/modules/*.json".format(get_nemo_root()))]
         addons = [x for x in addons if x not in {"builtin", "matrixNodes"}]
@@ -287,6 +275,7 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         try:
             cmds.optionVar(sv=('NEMO_EXPORT_CONFIG', self.save_config()))
 
+            self.check()
             m2n._process(name,
                          self.get_controllers(),
                          self.get_shapes(),
