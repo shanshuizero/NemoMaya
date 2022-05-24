@@ -157,8 +157,8 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
                 if QMessageBox.StandardButton.No == QMessageBox.question(self, "Export folder not empty",
                                                                          "Do you really want to overwrite {}?".format(dir_output)):
                     return
-            new_path_resource = "{}/{}__RESOURCE.nemodata".format(dir_output, name)
-            shutil.copy(path_resource, new_path_resource)
+            new_path_resource = "{}__RESOURCE.nemodata".format(name)
+            shutil.copy(path_resource, '{}/{}'.format(dir_output, new_path_resource))
             path_resource = new_path_resource
             new_path_bin = "{}/{}.{}".format(dir_output, name, WidgetNemoAssembler.ext())
             shutil.copy(path_bin, new_path_bin)

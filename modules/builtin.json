@@ -1977,7 +1977,6 @@
       "paintWeights",
       "useComponentsMatrix",
       "dropoff",
-      "skinningMethod",
       "normalizeWeights",
       "blendWeights",
       "basePoints",
@@ -1994,8 +1993,9 @@
         "returns": [{"name": "outputGeometry[0]", "type": "Shape"}],
         "ignores": ["bindPreMatrix"],
         "parameters": [
-          {"name": "envelope", "type": "Float"},
           {"name": "input[0].inputGeometry", "type": "Shape"},
+          {"name": "envelope", "type": "Float"},
+          {"name": "skinningMethod", "type": "Int"},
           {"name": "geomMatrix", "type": "Mat4"},
           {"name": "matrix[*]", "type": "Mat4[]"}
         ]
