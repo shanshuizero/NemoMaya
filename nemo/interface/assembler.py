@@ -26,18 +26,7 @@ from maya import cmds
 
 import os
 import glob
-
-
-def get_nemo_root():
-    if 'NEMO_ROOT' in os.environ:
-        return os.environ['NEMO_ROOT']
-    raise RuntimeError("Env NEMO_ROOT must be set first")
-
-
 import sys
-
-sys.path.insert(0, "{}/extern".format(get_nemo_root()))
-sys.path.insert(0, "{}".format(get_nemo_root()))
 
 import Qt
 import dayu_widgets
@@ -45,7 +34,10 @@ import dayu_widgets
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
-    return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    if sys.version_info.major == 2:
+        return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    else:
+        return Qt.QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 
 class WidgetNemoAssembler(QtWidgets.QWidget):
@@ -58,6 +50,9 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         self.setWindowTitle("Nemo Assembler")
         self.layout = self.create_ui()
         self.setLayout(self.layout)
+
+    def dll_mode(self):
+        return self.options_runtime.isChecked()
 
     def create_ui(self):
         layout = QtWidgets.QVBoxLayout()
@@ -105,19 +100,48 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         self.browser_dir_output.sig_folder_changed.connect(self.on_select_output_folder)
         layout.addLayout(layout_output)
 
+        layout_options = QtWidgets.QHBoxLayout()
+        self.options_runtime = dayu_widgets.MCheckBox("runtime")
+        if "win32" == sys.platform:
+            self.options_runtime.setEnabled(False)
+        layout_options.addWidget(self.options_runtime)
+        self.options_relative = dayu_widgets.MCheckBox("relative")
+        layout_options.addWidget(self.options_relative)
+        layout.addLayout(layout_options)
+
         btn_assemble = dayu_widgets.MPushButton("Assemble")
         btn_assemble.clicked.connect(self.on_assemble)
         layout.addWidget(btn_assemble)
         return layout
 
     @staticmethod
-    def ext():
-        return "mll" if "win32" == sys.platform else "so"
+    def ext(dll_mode):
+        if dll_mode:
+            return "dll" if "win32" == sys.platform else "so"
+        else:
+            return "mll" if "win32" == sys.platform else "so"
+
+    @staticmethod
+    def binary_name(identifier, dll_mode):
+        if dll_mode:
+            return "{}.dll".format(identifier) if "win32" == sys.platform else "lib{}.so".format(identifier)
+        else:
+            return "{}.{}".format(identifier, WidgetNemoAssembler.ext(dll_mode))
 
     def on_select_receive_folder(self, path):
         try:
-            binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext()))[0]
-            self.label_name.setText(os.path.splitext(os.path.basename(binary))[0])
+            binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(self.dll_mode())))
+            if "win32" == sys.platform and not binary and glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(not self.dll_mode()))):
+                self.options_runtime.setChecked(not self.dll_mode())
+                binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(self.dll_mode())))
+            binary = binary[0]
+
+            name = os.path.splitext(os.path.basename(binary))[0]
+            if "win32" != sys.platform and name.startswith("lib"):
+                name = name[3:]
+                self.options_runtime.setChecked(True)
+
+            self.label_name.setText(name)
         except Exception as e:
             self.label_name.setText(WidgetNemoAssembler.symbol_unknown)
 
@@ -145,10 +169,17 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
 
         dir_receive = str(self.browser_dir_receive.dayu_path)
         path_config = "{}/{}__CONFIG.json".format(dir_receive, name)
-        path_bin = "{}/{}.{}".format(dir_receive, name, WidgetNemoAssembler.ext())
+        path_bin = "{}/{}".format(dir_receive, WidgetNemoAssembler.binary_name(name, self.dll_mode()))
         dir_upload = str(self.browser_dir_upload.dayu_path)
         path_resource = "{}/{}__RESOURCE.nemodata".format(dir_upload, name)
         path_scene = "{}/{}__SCENE.json".format(dir_upload, name)
+        path_shading = "{}/{}__MAT.json".format(dir_upload, name)
+        path_materials = "{}/{}__MAT.ma".format(dir_upload, name)
+
+        def clone(path, dir_to):
+            new_path = "{}/{}".format(dir_to, os.path.basename(path))
+            shutil.copy(path, new_path)
+            return new_path
 
         import shutil
         try:
@@ -157,15 +188,18 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
                 if QMessageBox.StandardButton.No == QMessageBox.question(self, "Export folder not empty",
                                                                          "Do you really want to overwrite {}?".format(dir_output)):
                     return
-            new_path_resource = "{}__RESOURCE.nemodata".format(name)
-            shutil.copy(path_resource, '{}/{}'.format(dir_output, new_path_resource))
-            path_resource = new_path_resource
-            new_path_bin = "{}/{}.{}".format(dir_output, name, WidgetNemoAssembler.ext())
-            shutil.copy(path_bin, new_path_bin)
-            path_bin = new_path_bin
+            path_resource = clone(path_resource, dir_output)
+            path_bin = clone(path_bin, dir_output)
+            if self.dll_mode():
+                path_config = clone(path_config, dir_output)
+                path_shading = clone(path_shading, dir_output)
 
             from nemo.n2m import n2m
-            n2m.assemble(path_config, path_scene, path_bin, path_resource, name, False)
+            if self.dll_mode():
+                cmds.file(path_materials, o=True, f=True)
+            else:
+                cmds.file(new=True, f=True)
+            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, self.dll_mode(), relative_path=self.options_relative.isChecked())
             cmds.file(rename='{}/{}.ma'.format(dir_output, name))
             cmds.file(save=True, type="mayaAscii")
         except Exception as e:

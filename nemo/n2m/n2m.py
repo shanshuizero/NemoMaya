@@ -20,6 +20,7 @@
  """
 
 import json
+import os
 import import_controllers
 from maya import cmds
 
@@ -43,7 +44,7 @@ def connect_matrix_to_transform(src, obj):
             cmds.connectAttr(source, dest)
 
 
-def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_mode):
+def assemble(path_config, path_scene, path_bin, path_resource, path_shading, identifier, dll_mode, relative_path=True):
     with open(path_scene) as f:
         import_controllers.import_from(json.load(f))
 
@@ -51,8 +52,8 @@ def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_m
         config = json.load(f)
 
     if dll_mode:
-        config['bin'] = path_bin
-        config['resource'] = path_resource
+        config['bin'] = os.path.basename(path_bin) if relative_path else path_bin
+        config['resource'] = os.path.basename(path_resource) if relative_path else path_resource
         with open(path_config, 'w') as f:
             json.dump(config, f)
         cmds.loadPlugin('NemoMayaNodes', quiet=True)
@@ -61,10 +62,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_m
     cmds.loadPlugin('matrixNodes', quiet=True)
 
     if dll_mode:
-        node = cmds.createNode('Nemo')
-        cmds.createNode('transform', name='Dummy')
-        cmds.createNode('mesh', name='DummyShape', parent='Dummy')
-        cmds.connectAttr('{}.dummy'.format(node), 'DummyShape.inMesh')
+        node = cmds.createNode('Nemo', name='NEMO__{}'.format(identifier), p=identifier)
     else:
         node = cmds.createNode(identifier)
 
@@ -103,6 +101,11 @@ def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_m
         if is_output:
             if attr == 'worldMesh0':
                 dest = '{}.inMesh'.format(obj)
+                if dll_mode:
+                    slot = cmds.listRelatives(obj, p=True)[0]
+                    cmds.connectAttr('{}.write'.format(node), '{}.scaleX'.format(slot))
+                    cmds.connectAttr('{}.write'.format(node), '{}.scaleY'.format(slot))
+                    cmds.connectAttr('{}.write'.format(node), '{}.scaleZ'.format(slot))
             elif attr == 'worldSpace0':
                 dest = '{}.create'.format(obj)
             elif attr == 'parentMatrix0':
@@ -130,7 +133,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, identifier, dll_m
             cmds.connectAttr('{}.{}'.format(obj, attr), '{}.{}'.format(node, name))
 
     if dll_mode:
-        cmds.setAttr('{}.nemo'.format(node), path_config, type="string")
-        cmds.polyEvaluate('DummyShape', v=True)
+        cmds.setAttr('{}.nemo'.format(node), os.path.basename(path_config) if relative_path else path_config, type="string")
+        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
     else:
         cmds.setAttr('{}.resource'.format(node), path_resource, type="string")

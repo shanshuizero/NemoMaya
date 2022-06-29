@@ -124,7 +124,10 @@ def is_channel_box_locked(ctrl):
 
 
 def is_channel_box_driven(ctrl):
-    for x in list_channel_box(ctrl) + ['translate', 'rotate', 'scale']:
+    default_attributes = [
+        'translate', 'translateX', 'translateY', 'translateZ', 'rotate', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ'
+    ]
+    for x in list_channel_box(ctrl) + default_attributes:
         if cmds.listConnections("{}.{}".format(ctrl, x), s=True, d=False):
             return True
     return False
@@ -170,9 +173,9 @@ def get_controllers(patterns, curve=True, surface=False, free=True, visible=True
     return results
 
 
-def get_meshes(patterns):
+def get_meshes(patterns, controllers):
     shapes = []
     for shape in cmds.ls(type='mesh', long=True, ni=True):
-        if any(x in shape for x in patterns):
+        if any(x in shape for x in patterns) and not is_world_visibility_always_off(shape, controllers):
             shapes.append(shape)
     return shapes

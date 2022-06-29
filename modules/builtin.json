@@ -125,6 +125,7 @@
           {"name": "constraintRotateTranslate", "type": "Vec3"},
           {"name": "constraintRotateOrder", "type": "Int"},
           {"name": "constraintJointOrient", "type": "Vec3"},
+          {"name": "inverseScale", "type": "Vec3"},
           {"name": "offset", "type": "Vec3"},
           {"name": "targetWeight[*]", "type": "Float[]", "stack": true},
           {"name": "restRotate", "type": "Vec3"},
@@ -279,7 +280,7 @@
     ],
     "methods": [
       {
-        "is_dummy": true,
+        "name": "localCurve",
         "ignores": ["header", "tweak", "cached", "create"],
         "returns": [{"name": "local", "type": "Curve"}],
         "parameters": [{"name": "create", "type": "Curve"}]
@@ -301,7 +302,7 @@
         "returns": [{"name": "worldSpace[0]", "type": "Curve"}],
         "ignores": ["header", "tweak", "cached", "create"],
         "parameters": [
-          {"name": "local", "type": "Curve", "mutable": true},
+          {"name": "local", "type": "Curve"},
           {"name": "worldMatrix[0]", "type": "Mat4"}
         ]
       }
@@ -350,10 +351,10 @@
       },
       {
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
-        "ignores": ["origin"],
         "parameters": [
-          {"name": "envelope", "type": "Float"},
           {"name": "input[$0].inputGeometry", "type": "Shape"},
+          {"name": "envelope", "type": "Float"},
+          {"name": "origin", "type": "Int"},
           {"name": "weight[?]", "type": "Float[]"},
           {
             "name": "inputTarget[$0].inputTargetGroup[?].inputTargetItem[?].inputGeomTarget",
@@ -465,21 +466,6 @@
     ]
   },
   {
-    "name": "closestPointOnSurface",
-    "methods": [
-      {
-        "returns": [
-          {"name": "parameterU", "type": "Float"},
-          {"name": "parameterV", "type": "Float"}
-        ],
-        "parameters": [
-          {"name": "inputSurface", "type": "Surface", "mutable": true},
-          {"name": "inPosition", "type": "Vec3"}
-        ]
-      }
-    ]
-  },
-  {
     "name": "closestPointOnMesh",
     "methods": [
       {
@@ -491,6 +477,21 @@
         "parameters": [
           {"name": "inMesh", "type": "Mesh"},
           {"name": "inputMatrix", "type": "Mat4"},
+          {"name": "inPosition", "type": "Vec3"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "closestPointOnSurface",
+    "methods": [
+      {
+        "returns": [
+          {"name": "parameterU", "type": "Float"},
+          {"name": "parameterV", "type": "Float"}
+        ],
+        "parameters": [
+          {"name": "inputSurface", "type": "Surface", "mutable": true},
           {"name": "inPosition", "type": "Vec3"}
         ]
       }
@@ -523,24 +524,20 @@
           {"name": "bindPreMatrix", "type": "Mat4"},
           {"name": "angleInterpolation", "type": "Int"},
           {"name": "weights[$0].weights[?]", "type": "Float[]"},
-          {"name": "translate", "outside_module": "transform", "type": "Vec3"},
-          {"name": "rotate", "outside_module": "transform", "type": "Vec3"},
-          {"name": "rotateOrder", "outside_module": "transform", "type": "Int"},
-          {"name": "scale", "outside_module": "transform", "type": "Vec3"},
-          {
-            "name": "rotatePivot",
-            "outside_module": "transform",
-            "type": "Vec3"
-          },
-          {"name": "scalePivot", "outside_module": "transform", "type": "Vec3"},
+          {"name": "translate", "external": "transform", "type": "Vec3"},
+          {"name": "rotate", "external": "transform", "type": "Vec3"},
+          {"name": "rotateOrder", "external": "transform", "type": "Int"},
+          {"name": "scale", "external": "transform", "type": "Vec3"},
+          {"name": "rotatePivot", "external": "transform", "type": "Vec3"},
+          {"name": "scalePivot", "external": "transform", "type": "Vec3"},
           {
             "name": "rotatePivotTranslate",
-            "outside_module": "transform",
+            "external": "transform",
             "type": "Vec3"
           },
           {
             "name": "scalePivotTranslate",
-            "outside_module": "transform",
+            "external": "transform",
             "type": "Vec3"
           }
         ]
@@ -555,24 +552,20 @@
           {"name": "bindPreMatrix", "type": "Mat4"},
           {"name": "angleInterpolation", "type": "Int"},
           {"name": "weights[$0].weights[?]", "type": "Float[]"},
-          {"name": "translate", "outside_module": "transform", "type": "Vec3"},
-          {"name": "rotate", "outside_module": "transform", "type": "Vec3"},
-          {"name": "rotateOrder", "outside_module": "transform", "type": "Int"},
-          {"name": "scale", "outside_module": "transform", "type": "Vec3"},
-          {
-            "name": "rotatePivot",
-            "outside_module": "transform",
-            "type": "Vec3"
-          },
-          {"name": "scalePivot", "outside_module": "transform", "type": "Vec3"},
+          {"name": "translate", "external": "transform", "type": "Vec3"},
+          {"name": "rotate", "external": "transform", "type": "Vec3"},
+          {"name": "rotateOrder", "external": "transform", "type": "Int"},
+          {"name": "scale", "external": "transform", "type": "Vec3"},
+          {"name": "rotatePivot", "external": "transform", "type": "Vec3"},
+          {"name": "scalePivot", "external": "transform", "type": "Vec3"},
           {
             "name": "rotatePivotTranslate",
-            "outside_module": "transform",
+            "external": "transform",
             "type": "Vec3"
           },
           {
             "name": "scalePivotTranslate",
-            "outside_module": "transform",
+            "external": "transform",
             "type": "Vec3"
           }
         ]
@@ -717,6 +710,7 @@
     ]
   },
   {"name": "deformBend", "is_dag": true},
+  {"name": "deformFlare", "is_dag": true},
   {
     "name": "deformSine",
     "is_dag": true,
@@ -727,11 +721,11 @@
       }
     ]
   },
+  {"name": "deformSquash", "is_dag": true},
   {"name": "deformTwist", "is_dag": true},
   {
     "name": "deltaMush",
     "is_deformer": true,
-    "ignores": ["weightList"],
     "methods": [
       {
         "ignores": ["input[0].groupId"],
@@ -812,12 +806,7 @@
   },
   {
     "name": "ffd",
-    "ignores": [
-      "outsideLattice",
-      "outsideFalloffDist",
-      "weightList",
-      "weights"
-    ],
+    "ignores": ["outsideLattice", "outsideFalloffDist"],
     "is_deformer": true,
     "methods": [
       {
@@ -829,6 +818,7 @@
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
         "parameters": [
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "weightList[$0].weights[?]", "type": "Float[]"},
           {"name": "deformedLatticePoints", "type": "Lattice"},
           {"name": "deformedLatticeMatrix", "type": "Mat4"},
           {"name": "baseLatticeMatrix", "type": "Mat4"},
@@ -992,7 +982,7 @@
     ],
     "methods": [
       {
-        "is_dummy": true,
+        "name": "localLattice",
         "returns": [{"name": "latticeOutput", "type": "Lattice"}],
         "parameters": [{"name": "latticeInput", "type": "Lattice"}]
       },
@@ -1005,7 +995,7 @@
         "name": "worldLattice",
         "returns": [{"name": "worldLattice[0]", "type": "Lattice"}],
         "parameters": [
-          {"name": "latticeOutput", "type": "Lattice", "mutable": true},
+          {"name": "latticeOutput", "type": "Lattice"},
           {"name": "worldMatrix[0]", "type": "Mat4"}
         ]
       }
@@ -1066,12 +1056,12 @@
     ],
     "methods": [
       {
-        "is_dummy": true,
+        "name": "localMesh",
         "returns": [{"name": "outMesh", "type": "Mesh"}],
         "parameters": [{"name": "inMesh", "type": "Mesh"}]
       },
       {
-        "is_dummy": true,
+        "name": "cachedLocalMesh",
         "returns": [{"name": "outMesh", "type": "Mesh"}],
         "ignores": ["inMesh"],
         "parameters": [{"name": "cachedInMesh", "type": "Mesh"}]
@@ -1085,7 +1075,7 @@
         "name": "worldMesh",
         "returns": [{"name": "worldMesh[0]", "type": "Mesh"}],
         "parameters": [
-          {"name": "outMesh", "type": "Mesh", "mutable": true},
+          {"name": "outMesh", "type": "Mesh"},
           {"name": "worldMatrix[0]", "type": "Mat4"}
         ]
       }
@@ -1231,19 +1221,11 @@
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
           {"name": "envelope", "type": "Float"},
           {"name": "matrix", "type": "Mat4"},
-          {
-            "name": "wavelength",
-            "outside_module": "deformSine",
-            "type": "Float"
-          },
-          {
-            "name": "amplitude",
-            "outside_module": "deformSine",
-            "type": "Float"
-          },
-          {"name": "offset", "outside_module": "deformSine", "type": "Float"},
-          {"name": "lowBound", "outside_module": "deformSine", "type": "Float"},
-          {"name": "highBound", "outside_module": "deformSine", "type": "Float"}
+          {"name": "wavelength", "external": "deformSine", "type": "Float"},
+          {"name": "amplitude", "external": "deformSine", "type": "Float"},
+          {"name": "offset", "external": "deformSine", "type": "Float"},
+          {"name": "lowBound", "external": "deformSine", "type": "Float"},
+          {"name": "highBound", "external": "deformSine", "type": "Float"}
         ]
       },
       {
@@ -1253,26 +1235,10 @@
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
           {"name": "envelope", "type": "Float"},
           {"name": "matrix", "type": "Mat4"},
-          {
-            "name": "startAngle",
-            "outside_module": "deformTwist",
-            "type": "Float"
-          },
-          {
-            "name": "endAngle",
-            "outside_module": "deformTwist",
-            "type": "Float"
-          },
-          {
-            "name": "lowBound",
-            "outside_module": "deformTwist",
-            "type": "Float"
-          },
-          {
-            "name": "highBound",
-            "outside_module": "deformTwist",
-            "type": "Float"
-          }
+          {"name": "startAngle", "external": "deformTwist", "type": "Float"},
+          {"name": "endAngle", "external": "deformTwist", "type": "Float"},
+          {"name": "lowBound", "external": "deformTwist", "type": "Float"},
+          {"name": "highBound", "external": "deformTwist", "type": "Float"}
         ]
       },
       {
@@ -1282,13 +1248,9 @@
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
           {"name": "envelope", "type": "Float"},
           {"name": "matrix", "type": "Mat4"},
-          {
-            "name": "curvature",
-            "outside_module": "deformBend",
-            "type": "Float"
-          },
-          {"name": "lowBound", "outside_module": "deformBend", "type": "Float"},
-          {"name": "highBound", "outside_module": "deformBend", "type": "Float"}
+          {"name": "curvature", "external": "deformBend", "type": "Float"},
+          {"name": "lowBound", "external": "deformBend", "type": "Float"},
+          {"name": "highBound", "external": "deformBend", "type": "Float"}
         ]
       },
       {
@@ -1299,13 +1261,50 @@
           {"name": "envelope", "type": "Float"},
           {"name": "input[$0].groupId", "type": "Components"},
           {"name": "matrix", "type": "Mat4"},
+          {"name": "curvature", "external": "deformBend", "type": "Float"},
+          {"name": "lowBound", "external": "deformBend", "type": "Float"},
+          {"name": "highBound", "external": "deformBend", "type": "Float"}
+        ]
+      },
+      {
+        "name": "deformSquash",
+        "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
+        "parameters": [
+          {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "envelope", "type": "Float"},
+          {"name": "matrix", "type": "Mat4"},
+          {"name": "factor", "external": "deformSquash", "type": "Float"},
+          {"name": "expand", "external": "deformSquash", "type": "Float"},
+          {"name": "maxExpandPos", "external": "deformSquash", "type": "Float"},
           {
-            "name": "curvature",
-            "outside_module": "deformBend",
+            "name": "startSmoothness",
+            "external": "deformSquash",
             "type": "Float"
           },
-          {"name": "lowBound", "outside_module": "deformBend", "type": "Float"},
-          {"name": "highBound", "outside_module": "deformBend", "type": "Float"}
+          {
+            "name": "endSmoothness",
+            "external": "deformSquash",
+            "type": "Float"
+          },
+          {"name": "lowBound", "external": "deformSquash", "type": "Float"},
+          {"name": "highBound", "external": "deformSquash", "type": "Float"}
+        ]
+      },
+      {
+        "name": "deformFlare",
+        "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
+        "parameters": [
+          {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "weightList[$0].weights[?]", "type": "Float[]"},
+          {"name": "envelope", "type": "Float"},
+          {"name": "matrix", "type": "Mat4"},
+          {"name": "startFlareX", "external": "deformFlare", "type": "Float"},
+          {"name": "endFlareX", "external": "deformFlare", "type": "Float"},
+          {"name": "startFlareZ", "external": "deformFlare", "type": "Float"},
+          {"name": "endFlareZ", "external": "deformFlare", "type": "Float"},
+          {"name": "curve", "external": "deformFlare", "type": "Float"},
+          {"name": "lowBound", "external": "deformFlare", "type": "Float"},
+          {"name": "highBound", "external": "deformFlare", "type": "Float"}
         ]
       }
     ]
@@ -1352,7 +1351,7 @@
         "ignores": ["header", "tweak", "cached", "create"],
         "returns": [{"name": "worldSpace[0]", "type": "Curve"}],
         "parameters": [
-          {"name": "local", "type": "Curve", "mutable": true},
+          {"name": "local", "type": "Curve"},
           {"name": "worldMatrix[0]", "type": "Mat4"}
         ]
       }
@@ -1371,7 +1370,7 @@
     ],
     "methods": [
       {
-        "is_dummy": true,
+        "name": "localSurface",
         "ignores": ["header", "tweak"],
         "returns": [{"name": "local", "type": "Surface"}],
         "parameters": [{"name": "create", "type": "Surface"}]
@@ -1387,7 +1386,7 @@
         "ignores": ["header", "tweak", "create"],
         "returns": [{"name": "worldSpace[0]", "type": "Surface"}],
         "parameters": [
-          {"name": "local", "type": "Surface", "mutable": true},
+          {"name": "local", "type": "Surface"},
           {"name": "worldMatrix[0]", "type": "Mat4"}
         ]
       }
@@ -1769,6 +1768,7 @@
   },
   {
     "name": "polyEdgeToCurve",
+    "ignores": ["inputSmoothPolymesh"],
     "methods": [
       {
         "returns": [{"name": "outputcurve", "type": "Curve"}],
@@ -1777,6 +1777,18 @@
           {"name": "inputComponents", "type": "Components"},
           {"name": "degree", "type": "Int"}
         ]
+      }
+    ]
+  },
+  {
+    "name": "polyTweakUV",
+    "ignores": ["uvTweak", "inMeshCache"],
+    "methods": [
+      {
+        "is_dummy": true,
+        "returns": [{"name": "output", "type": "Mesh"}],
+        "ignores": ["useOldPolyArchitecture"],
+        "parameters": [{"name": "inputPolymesh", "type": "Mesh"}]
       }
     ]
   },
@@ -1972,7 +1984,6 @@
     "name": "skinCluster",
     "is_deformer": true,
     "ignores": [
-      "weightList",
       "maxInfluences",
       "paintWeights",
       "useComponentsMatrix",
@@ -1980,7 +1991,8 @@
       "normalizeWeights",
       "blendWeights",
       "basePoints",
-      "driverPoints"
+      "driverPoints",
+      "deformUserNormals"
     ],
     "methods": [
       {
@@ -2038,20 +2050,16 @@
   {
     "name": "transferAttributes",
     "is_deformer": true,
-    "filters": [
-      {
-        "target": "outputGeometry[0]",
-        "actions": [
-          {"action": "clear"},
-          {"name": "input[0].inputGeometry", "action": "add"}
-        ]
-      }
-    ],
+    "ignores": ["transferNormals", "transferUVs", "transferColors"],
     "methods": [
       {
-        "is_dummy": true,
-        "returns": [{"name": "outputGeometry[0]", "type": "Shape"}],
-        "parameters": [{"name": "input[0].inputGeometry", "type": "Shape"}]
+        "returns": [{"name": "outputGeometry[0]", "type": "Mesh"}],
+        "parameters": [
+          {"name": "input[0].inputGeometry", "type": "Mesh"},
+          {"name": "source[0]", "type": "Mesh"},
+          {"name": "searchMethod", "type": "Int"},
+          {"name": "transferPositions", "type": "Int"}
+        ]
       }
     ]
   },

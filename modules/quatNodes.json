@@ -1,10 +1,38 @@
 [
   {
+    "name": "eulerToQuat",
+    "methods": [
+      {
+        "name": "eulerToQuaternion",
+        "returns": [{"name": "outputQuat", "type": "Vec4"}],
+        "parameters": [
+          {"name": "inputRotate", "type": "Vec3"},
+          {"name": "inputRotateOrder", "type": "Int"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quatProd",
+    "methods": [
+      {
+        "returns": [{"name": "outputQuat", "type": "Vec4"}],
+        "parameters": [
+          {"name": "input1Quat", "type": "Vec4"},
+          {"name": "input2Quat", "type": "Vec4"}
+        ]
+      }
+    ]
+  },
+  {
     "name": "quatToEuler",
     "methods": [
       {
         "returns": [{"name": "outputRotate", "type": "Vec3"}],
-        "parameters": [{"name": "inputQuat", "type": "Vec4"}]
+        "parameters": [
+          {"name": "inputQuat", "type": "Vec4"},
+          {"name": "inputRotateOrder", "type": "Int"}
+        ]
       }
     ]
   }

@@ -28,11 +28,11 @@ from maya import cmds
 
 from exporter import Exporter
 from get_io import get_io
-from nemo.filter.scene_collect import get_controllers, get_meshes
 import export_controllers
+import export_materials
 
 
-def _process(identifier, controllers, shapes, project_dir, addons=[], debug=False, callback=None):
+def export(identifier, controllers, shapes, project_dir, addons=[], debug=False, callback=None, material=False):
     if os.path.exists(project_dir):
         shutil.rmtree(project_dir)
     os.mkdir(project_dir)
@@ -43,13 +43,18 @@ def _process(identifier, controllers, shapes, project_dir, addons=[], debug=Fals
     path_scene = '{}/{}__SCENE.json'.format(project_dir, identifier)
     with open(path_scene, 'w') as f:
         json.dump(scene_data, f)
+    if material:
+        shading_data = export_materials.export([cmds.ls(x)[0] for x in shapes], '{}/{}__MAT.ma'.format(project_dir, identifier))
+        path_shading = '{}/{}__MAT.json'.format(project_dir, identifier)
+        with open(path_shading, 'w') as f:
+            json.dump(shading_data, f)
 
     import NemoMaya
     exporter = Exporter(NemoMaya.Parser, debug)
     exporter.set_project_dir(project_dir)
     exporter.set_identifier(identifier)
 
-    exporter.set_modules_dir(os.path.realpath('{}/modules'.format(os.environ['NEMO_ROOT'])))
+    exporter.set_modules_dir(os.environ['NEMO_MODULES'])
     for plugin in ['matrixNodes'] + addons:
         cmds.loadPlugin(plugin, quiet=True)
         exporter.append_module(plugin)
@@ -58,7 +63,7 @@ def _process(identifier, controllers, shapes, project_dir, addons=[], debug=Fals
 
     addons_data = []
     for x in addons:
-        spec_path = '{}/modules/{}.py'.format(os.environ['NEMO_ROOT'], x)
+        spec_path = '{}/{}.py'.format(os.environ['NEMO_MODULES'], x)
         if not os.path.exists(spec_path):
             continue
         mod = imp.load_source(x, spec_path)
@@ -70,11 +75,3 @@ def _process(identifier, controllers, shapes, project_dir, addons=[], debug=Fals
     del addons_data
 
     return exporter.path_graph(), exporter.path_resource(), path_scene, exporter.path_debug() if debug else None
-
-
-def process(identifier, mayafile, project_dir, debug=True):
-    cmds.file(mayafile, o=True, f=True)
-
-    controllers = get_controllers("*")
-    shapes = get_meshes(["Geometry|high|", "Geometry|temp|"])
-    return _process(identifier, controllers, shapes, project_dir, addons=["quatNodes", "weightDriver"], debug=debug)

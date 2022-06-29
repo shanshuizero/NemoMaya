@@ -25,7 +25,6 @@ from nemo import utils
 
 
 def import_from(data):
-    cmds.file(new=True, f=True)
     rig_name = data['name']
     for ctrl_name, ctrl_data in data['controllers'].items():
         import_single(rig_name, ctrl_name, ctrl_data)

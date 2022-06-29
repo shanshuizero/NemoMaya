@@ -28,16 +28,7 @@ from maya import cmds
 import os
 import json
 
-def get_nemo_root():
-    if 'NEMO_ROOT' in os.environ:
-        return os.environ['NEMO_ROOT']
-    raise RuntimeError("Env NEMO_ROOT must be set first")
 
-
-import sys
-
-sys.path.insert(0, "{}/extern".format(get_nemo_root()))
-sys.path.insert(0, "{}".format(get_nemo_root()))
 
 import Qt
 import dayu_widgets
@@ -45,7 +36,11 @@ import dayu_widgets
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
-    return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    import sys
+    if sys.version_info.major == 2:
+        return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    else:
+        return Qt.QtCompat.wrapInstance(main_window_ptr, QtWidgets.QWidget)
 
 
 class WidgetNemoExporter(QtWidgets.QWidget):
@@ -217,7 +212,7 @@ class WidgetNemoExporter(QtWidgets.QWidget):
     def get_shapes(self):
         from nemo.filter import scene_collect
         patterns = [self.list_prefix.item(row).text() for row in range(self.list_prefix.count())]
-        return scene_collect.get_meshes(patterns)
+        return scene_collect.get_meshes(patterns, self.get_controllers())
 
     def on_select_shapes(self):
         cmds.select(self.get_shapes())
@@ -244,7 +239,7 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         layout.addLayout(layout_dir)
 
         import glob
-        addons = [os.path.splitext(os.path.basename(x))[0] for x in glob.glob("{}/modules/*.json".format(get_nemo_root()))]
+        addons = [os.path.splitext(os.path.basename(x))[0] for x in glob.glob("{}/*.json".format(os.environ['NEMO_MODULES']))]
         addons = [x for x in addons if x not in {"builtin", "matrixNodes"}]
         self.tags_addons = dayu_widgets.MCheckBoxGroup()
         self.tags_addons.set_button_list(addons)
@@ -276,13 +271,14 @@ class WidgetNemoExporter(QtWidgets.QWidget):
             cmds.optionVar(sv=('NEMO_EXPORT_CONFIG', self.save_config()))
 
             self.check()
-            m2n._process(name,
-                         self.get_controllers(),
-                         self.get_shapes(),
-                         str(path),
-                         addons=self.tags_addons.get_dayu_checked(),
-                         debug=True,
-                         callback=lambda percent: self.progress_parse.setValue(percent))
+            m2n.export(name,
+                       self.get_controllers(),
+                       self.get_shapes(),
+                       str(path),
+                       addons=self.tags_addons.get_dayu_checked(),
+                       debug=True,
+                       material=True,
+                       callback=lambda percent: self.progress_parse.setValue(percent))
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
         else:
