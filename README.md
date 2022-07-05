@@ -70,6 +70,7 @@
 💡 Linux系统可以考虑在env中设置`__GL_SYNC_TO_VBLANK=0`, 会节省帧刷新时间
 
 ### 已知的限制
+
 1. 使用write切换到真实模型时会降速，并且切换回预览模型时不会回到原来的速度。
 2. 在切换write模式或者线框模式时，模型有时候会无响应，此时需要操作一下控制器或时间滑条才可以恢复正常。
 
@@ -89,7 +90,7 @@ NemoCheck命令有两个参数，分别是[导出](#导出)的 Debug JSON 和 ne
 - `s(skip)`                   默认为空。可以跳过某个节点的检查，需要跳过多个节点时用`;`分隔
 - `v(verbose)`                默认为0。日志的详细程度
 - `x(stopOnFirstError)`       默认为开。在第一个错误时即停止而不是检查完所有节点才停止
-- `ft(focusType)`             默认为空。可以只检查某种类型的节点                
+- `ft(focusType)`             默认为空。可以只检查某种类型的节点
 
 ### 使用方法
 
@@ -111,3 +112,4 @@ print cmds.NemoCheck(path_debug, path_resource, ns='<your-namespace>', od='<your
 - closestPointOnSurface在端点处可能出现U或V的坐标与Maya发生很大漂移，这是因为在极点处U或V不影响取点的位置。
 - closestPointOnMesh的最近点如果落在模型边上可能导致面ID与Maya不一致。
 - transferAttriutes在投影和模型边缘非常接近时结果会不稳定。
+- 欧拉角与四元数转化时结果可能会变化，这是因为同一个旋转对应有两个符号相反的四元数，而对应的欧拉角则更多。

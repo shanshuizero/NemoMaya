@@ -32,6 +32,9 @@ def import_from(data):
     for shape_name, shape_data in data['shapes'].items():
         utils.create_from_path(shape_data['path'], shape_data['type'])
 
+    for src, dest in data.get('connections', []):
+        cmds.connectAttr(src, dest)
+
 
 def import_single(rig_name, ctrl_name, data):
     utils.create_from_path(data['path'], data['type'])

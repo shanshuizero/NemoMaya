@@ -23,7 +23,7 @@ import itertools
 from maya import cmds
 
 
-def export(shapes, path_export):
+def export(shapes, controllers, path_export):
     shading_groups = set()
     for shape in shapes:
         sg = cmds.listConnections(shape, type='shadingEngine')
@@ -35,11 +35,12 @@ def export(shapes, path_export):
     if not materials:
         return None
 
-    cmds.select(itertools.chain(*[cmds.listHistory(mat, pdo=True) for mat in materials]), ne=True)
+    objects = set(itertools.chain(*[cmds.listHistory(mat, pdo=True) for mat in materials]))
+    cmds.select(objects, ne=True)
     cmds.select(shading_groups, ne=True, add=True)
     cmds.file(path_export, typ='mayaAscii', ess=True, f=True)
 
-    result = dict()
+    mapping = dict()
     for sg in shading_groups:
         members = []
         for x in cmds.sets(sg, q=True):
@@ -55,6 +56,18 @@ def export(shapes, path_export):
                     continue
                 members.append(x)
         mat = cmds.listConnections('{}.surfaceShader'.format(sg), s=True, d=False)[0]
-        result[mat] = members
+        mapping[mat] = members
 
-    return result
+    connections = []
+    for obj in objects:
+        drivers = set(cmds.listConnections(obj, s=True, d=False) or [])
+        for ctrl in controllers:
+            if ctrl in drivers:
+                edges = cmds.listConnections(obj, c=True, p=True, s=True, d=False)
+                for i in range(len(edges))[::2]:
+                    src = edges[i + 1]
+                    dest = edges[i]
+                    if src.split('.')[0] == ctrl:
+                        connections.append((src, dest))
+
+    return mapping, connections

@@ -103,9 +103,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
                 dest = '{}.inMesh'.format(obj)
                 if dll_mode:
                     slot = cmds.listRelatives(obj, p=True)[0]
-                    cmds.connectAttr('{}.write'.format(node), '{}.scaleX'.format(slot))
-                    cmds.connectAttr('{}.write'.format(node), '{}.scaleY'.format(slot))
-                    cmds.connectAttr('{}.write'.format(node), '{}.scaleZ'.format(slot))
+                    cmds.connectAttr('{}.write'.format(node), '{}.visibility'.format(slot))
             elif attr == 'worldSpace0':
                 dest = '{}.create'.format(obj)
             elif attr == 'parentMatrix0':
@@ -133,7 +131,30 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
             cmds.connectAttr('{}.{}'.format(obj, attr), '{}.{}'.format(node, name))
 
     if dll_mode:
+        cmds.setAttr('{}.write'.format(node), True)
         cmds.setAttr('{}.nemo'.format(node), os.path.basename(path_config) if relative_path else path_config, type="string")
         cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
     else:
         cmds.setAttr('{}.resource'.format(node), path_resource, type="string")
+
+    ## assign shaders based on MAT json
+    with open(path_shading) as f:
+        data = json.load(f)
+    for shader, members in data.items():
+        if shader == 'lambert1':
+            sg = 'initialShadingGroup'
+        else:
+            sg = cmds.listConnections(shader, t='shadingEngine')
+            if len(sg) != 1:
+                raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
+            sg = sg[0]
+        for components in members:
+            cmds.sets(components, e=True, forceElement=sg)
+
+    if dll_mode:
+        node_proxy = cmds.createNode('mesh', name='NEMOPROXY__{}'.format(identifier), parent=identifier)
+        cmds.connectAttr('{}.proxy'.format(node), '{}.inMesh'.format(node_proxy))
+        node_reverse = cmds.createNode('reverse')
+        cmds.connectAttr('{}.write'.format(node), '{}.inputX'.format(node_reverse))
+        cmds.connectAttr('{}.outputX'.format(node_reverse), '{}.visibility'.format(node_proxy))
+        cmds.setAttr('{}.write'.format(node), False)

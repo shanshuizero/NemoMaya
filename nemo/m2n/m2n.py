@@ -40,14 +40,16 @@ def export(identifier, controllers, shapes, project_dir, addons=[], debug=False,
     inputs, outputs = get_io(controllers, shapes)
 
     scene_data = export_controllers.export(identifier, controllers, shapes)
+    if material:
+        material_mapping, material_drivers = export_materials.export([cmds.ls(x)[0] for x in shapes], controllers, '{}/{}__MAT.ma'.format(project_dir, identifier))
+        path_shading = '{}/{}__MAT.json'.format(project_dir, identifier)
+        with open(path_shading, 'w') as f:
+            json.dump(material_mapping, f)
+        scene_data['connections'] = material_drivers
+
     path_scene = '{}/{}__SCENE.json'.format(project_dir, identifier)
     with open(path_scene, 'w') as f:
         json.dump(scene_data, f)
-    if material:
-        shading_data = export_materials.export([cmds.ls(x)[0] for x in shapes], '{}/{}__MAT.ma'.format(project_dir, identifier))
-        path_shading = '{}/{}__MAT.json'.format(project_dir, identifier)
-        with open(path_shading, 'w') as f:
-            json.dump(shading_data, f)
 
     import NemoMaya
     exporter = Exporter(NemoMaya.Parser, debug)
