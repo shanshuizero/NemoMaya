@@ -61,7 +61,7 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
 
         layout_name = QtWidgets.QHBoxLayout()
         label_head = dayu_widgets.MLabel(text="Name:")
-        label_head.setAlignment(QtCore.Qt.ElideLeft)
+        label_head.set_elide_mode(QtCore.Qt.ElideLeft)
         label_head.setFixedWidth(60)
         layout_name.addWidget(label_head)
         self.label_name = dayu_widgets.MLabel(text=WidgetNemoAssembler.symbol_unknown)
@@ -199,9 +199,11 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
                 cmds.file(path_materials, o=True, f=True)
             else:
                 cmds.file(new=True, f=True)
-            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, self.dll_mode(), relative_path=self.options_relative.isChecked())
             cmds.file(rename='{}/{}.ma'.format(dir_output, name))
+            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, self.dll_mode(), relative_path=self.options_relative.isChecked())
             cmds.file(save=True, type="mayaAscii")
+            # TODO file just created is highly unstable, reopen it would get fine for unknown reason
+            cmds.file('{}/{}.ma'.format(dir_output, name), open=True, f=True)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 

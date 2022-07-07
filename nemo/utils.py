@@ -19,6 +19,8 @@
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  """
 
+import sys
+
 from maya import cmds
 
 
@@ -79,7 +81,11 @@ def pack_enum_field(field):
     field = {value: name for name, value in field}
     enumName = ''
     cursor = -1
-    for value in sorted(field.iterkeys()):
+    if sys.version_info.major == 2:
+        keys = sorted(field.iterkeys())
+    else:
+        keys = sorted(field.keys())
+    for value in keys:
         if cursor + 1 == value:
             enumName += field[value] + ':'
         else:

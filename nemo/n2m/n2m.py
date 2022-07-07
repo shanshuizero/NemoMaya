@@ -21,7 +21,7 @@
 
 import json
 import os
-import import_controllers
+from . import import_controllers
 from maya import cmds
 
 
@@ -48,6 +48,11 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     with open(path_scene) as f:
         import_controllers.import_from(json.load(f))
 
+    root = cmds.ls(assemblies=True, visible=True)
+    if not root or len(root) != 1:
+        raise RuntimeError("Should have exactly one top node in hierarchy")
+    root = root[0]
+
     with open(path_config) as f:
         config = json.load(f)
 
@@ -62,7 +67,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     cmds.loadPlugin('matrixNodes', quiet=True)
 
     if dll_mode:
-        node = cmds.createNode('Nemo', name='NEMO__{}'.format(identifier), p=identifier)
+        node = cmds.createNode('Nemo', name='NEMO__{}'.format(identifier), p=root)
     else:
         node = cmds.createNode(identifier)
 
@@ -133,13 +138,13 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     if dll_mode:
         cmds.setAttr('{}.write'.format(node), True)
         cmds.setAttr('{}.nemo'.format(node), os.path.basename(path_config) if relative_path else path_config, type="string")
-        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
     else:
         cmds.setAttr('{}.resource'.format(node), path_resource, type="string")
 
     ## assign shaders based on MAT json
     with open(path_shading) as f:
         data = json.load(f)
+    shading_data = dict()
     for shader, members in data.items():
         if shader == 'lambert1':
             sg = 'initialShadingGroup'
@@ -148,13 +153,36 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
             if len(sg) != 1:
                 raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
             sg = sg[0]
-        for components in members:
-            cmds.sets(components, e=True, forceElement=sg)
+        shading_data[sg] = members
+
+    for sg, components in shading_data.items():
+        cmds.sets(components, e=True, forceElement=sg)
 
     if dll_mode:
-        node_proxy = cmds.createNode('mesh', name='NEMOPROXY__{}'.format(identifier), parent=identifier)
+        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
+        cmds.setAttr('{}.write'.format(node), False)
+
+        node_proxy = cmds.createNode("mesh", name='NEMO_PROXY__{}'.format(identifier), p=root)
         cmds.connectAttr('{}.proxy'.format(node), '{}.inMesh'.format(node_proxy))
         node_reverse = cmds.createNode('reverse')
         cmds.connectAttr('{}.write'.format(node), '{}.inputX'.format(node_reverse))
         cmds.connectAttr('{}.outputX'.format(node_reverse), '{}.visibility'.format(node_proxy))
-        cmds.setAttr('{}.write'.format(node), False)
+
+        import maya.api.OpenMaya as om2
+        num_materials = len(shading_data)
+        points = om2.MPointArray()
+        points.append(om2.MPoint(0, 0, 0))
+        points.append(om2.MPoint(0, 0, 0))
+        points.append(om2.MPoint(0, 0, 0))
+        counts = om2.MIntArray()
+        connections = om2.MIntArray()
+        for _ in range(num_materials):
+            counts.append(3)
+            connections.append(0)
+            connections.append(1)
+            connections.append(2)
+        mesh = om2.MFnMesh()
+        mesh.create(points, counts, connections, parent=om2.MGlobal.getSelectionListByName(root).getDependNode(0))
+        for i, (sg, _) in enumerate(shading_data.items()):
+            cmds.sets("{}.f[{}]".format(mesh.name(), i), e=True, forceElement=sg)
+        cmds.rename(mesh.name(), 'NEMO_MATERIALS__{}'.format(identifier))

@@ -28,8 +28,6 @@ from maya import cmds
 import os
 import json
 
-
-
 import Qt
 import dayu_widgets
 
@@ -40,7 +38,7 @@ def maya_main_window():
     if sys.version_info.major == 2:
         return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
     else:
-        return Qt.QtCompat.wrapInstance(main_window_ptr, QtWidgets.QWidget)
+        return Qt.QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 
 class WidgetNemoExporter(QtWidgets.QWidget):
@@ -84,6 +82,10 @@ class WidgetNemoExporter(QtWidgets.QWidget):
             s = cmds.getAttr('{}.scale'.format(x))[0]
             if abs(s[0]) < 1E-5 or abs(s[1]) < 1E-5 or abs(s[2]) < 1E-5:
                 raise RuntimeError("zero scale is not allowed:\n\t{}.scale is {}".format(x, s))
+
+        root = cmds.ls(assemblies=True, visible=True)
+        if not root or len(root) != 1:
+            raise RuntimeError("Should have exactly one top node in hierarchy")
 
     def create_controllers(self):
         layout = QtWidgets.QVBoxLayout()
