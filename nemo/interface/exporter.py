@@ -78,13 +78,14 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         return dayu_widgets.MLabel("Timestamp: {}".format(timestamp))
 
     def check(self):
+        from nemo import utils
+
         for x in cmds.ls(type='transform') + cmds.ls(type='joint'):
             s = cmds.getAttr('{}.scale'.format(x))[0]
             if abs(s[0]) < 1E-5 or abs(s[1]) < 1E-5 or abs(s[2]) < 1E-5:
                 raise RuntimeError("zero scale is not allowed:\n\t{}.scale is {}".format(x, s))
 
-        root = cmds.ls(assemblies=True, visible=True)
-        if not root or len(root) != 1:
+        if not utils.get_root():
             raise RuntimeError("Should have exactly one top node in hierarchy")
 
     def create_controllers(self):

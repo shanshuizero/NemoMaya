@@ -25,26 +25,27 @@ from nemo import utils
 
 
 def import_from(data):
-    rig_name = data['name']
-    for ctrl_name, ctrl_data in data['controllers'].items():
-        import_single(rig_name, ctrl_name, ctrl_data)
-
     for shape_name, shape_data in data['shapes'].items():
         utils.create_from_path(shape_data['path'], shape_data['type'])
+
+    root = utils.get_root()
+
+    for ctrl_name, ctrl_data in data['controllers'].items():
+        import_single(root, ctrl_name, ctrl_data)
 
     for src, dest in data.get('connections', []):
         cmds.connectAttr(src, dest)
 
 
-def import_single(rig_name, ctrl_name, data):
+def import_single(root, ctrl_name, data):
     utils.create_from_path(data['path'], data['type'])
     if 'extra_ctrl_name' in data:
         extra_ctrl_name = data['extra_ctrl_name']
-        cmds.xform('|{}|NEMO_{}'.format(rig_name, extra_ctrl_name), m=data['rootMatrix'])
+        cmds.xform('|{}|NEMO_{}'.format(root, extra_ctrl_name), m=data['rootMatrix'])
         cmds.setAttr(extra_ctrl_name + '.rotateOrder', data['extra_ctrl_rotateOrder'])
         cmds.xform(extra_ctrl_name, m=data['extra_ctrl_matrix'], os=True)
     else:
-        cmds.xform('|{}|NEMO_{}'.format(rig_name, ctrl_name), m=data['rootMatrix'])
+        cmds.xform('|{}|NEMO_{}'.format(root, ctrl_name), m=data['rootMatrix'])
     cmds.xform(ctrl_name, m=data['matrix'], os=True)
     cmds.setAttr('{}.rotateOrder'.format(ctrl_name), data.get('rotateOrder', 0))
 

@@ -22,6 +22,7 @@
 import json
 import os
 from . import import_controllers
+from nemo import utils
 from maya import cmds
 
 
@@ -48,10 +49,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     with open(path_scene) as f:
         import_controllers.import_from(json.load(f))
 
-    root = cmds.ls(assemblies=True, visible=True)
-    if not root or len(root) != 1:
-        raise RuntimeError("Should have exactly one top node in hierarchy")
-    root = root[0]
+    root = utils.get_root()
 
     with open(path_config) as f:
         config = json.load(f)

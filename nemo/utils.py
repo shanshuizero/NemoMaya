@@ -125,3 +125,11 @@ def create_from_path(path, t):
             real_name = cmds.createNode(node_type, name=name)
         if is_final:
             return name
+
+
+def get_root():
+    root = cmds.ls(assemblies=True, visible=True)
+    if not root or len(root) != 1:
+        raise RuntimeError("Should have exactly one top node in hierarchy")
+    return root[0]
+

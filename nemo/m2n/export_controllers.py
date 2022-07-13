@@ -29,11 +29,12 @@ from nemo.filter import scene_collect
 def export(rig_name, controllers, shapes, init_data=None):
     data = init_data or dict()
     data['name'] = rig_name
+    root = utils.get_root()
 
     controllers_data = dict()
     for x in controllers:
         controllers_data[x] = dict()
-        export_single_controller(rig_name, x, controllers_data[x])
+        export_single_controller(root, x, controllers_data[x])
     data['controllers'] = controllers_data
 
     mesh_data = dict()
@@ -43,20 +44,20 @@ def export(rig_name, controllers, shapes, init_data=None):
     return data
 
 
-def export_single_controller(rig_name, ctrl, data):
+def export_single_controller(root, ctrl, data):
     node_type = cmds.nodeType(ctrl)
     assert node_type in {'transform', 'joint'}
     data['type'] = node_type
 
     extra = scene_collect.get_extra(ctrl)
     if extra:
-        path = '|{0}|NEMO_{1}|{1}'.format(rig_name, extra)
+        path = '|{0}|NEMO_{1}|{1}'.format(root, extra)
         data['extra_ctrl_name'] = extra
         data['extra_ctrl_matrix'] = cmds.xform(extra, q=True, m=True, os=True)
         data['extra_ctrl_rotateOrder'] = cmds.getAttr(extra + '.rotateOrder')
         data['rootMatrix'] = cmds.getAttr('{}.parentMatrix'.format(extra))
     else:
-        path = '|{0}|NEMO_{1}'.format(rig_name, ctrl)
+        path = '|{0}|NEMO_{1}'.format(root, ctrl)
         data['rootMatrix'] = cmds.getAttr('{}.parentMatrix'.format(ctrl))
     data['path'] = path + '|' + ctrl
 
