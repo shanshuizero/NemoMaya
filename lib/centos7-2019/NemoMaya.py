@@ -297,10 +297,6 @@ class vec3(_object):
 vec3_swigregister = _NemoMaya.vec3_swigregister
 vec3_swigregister(vec3)
 
-
-def get_timestamp():
-    return _NemoMaya.get_timestamp()
-get_timestamp = _NemoMaya.get_timestamp
 class Parser(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, Parser, name, value)
@@ -319,6 +315,9 @@ class Parser(_object):
 
     def parse(self, output):
         return _NemoMaya.Parser_parse(self, output)
+
+    def parse_shape(self, outputShape, outputVisibility):
+        return _NemoMaya.Parser_parse_shape(self, outputShape, outputVisibility)
 
     def clean(self):
         return _NemoMaya.Parser_clean(self)

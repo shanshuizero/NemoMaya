@@ -57,8 +57,6 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
     def create_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
-        layout.addWidget(self.create_version())
-
         layout_name = QtWidgets.QHBoxLayout()
         label_head = dayu_widgets.MLabel(text="Name:")
         label_head.set_elide_mode(QtCore.Qt.ElideLeft)
@@ -206,15 +204,6 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
             cmds.file('{}/{}.ma'.format(dir_output, name), open=True, f=True)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
-
-    def create_version(self):
-        timestamp = "<unknown>"
-        try:
-            import NemoMaya
-            timestamp = NemoMaya.get_timestamp()
-        except:
-            pass
-        return dayu_widgets.MLabel("Timestamp: {}".format(timestamp))
 
 
 def show():

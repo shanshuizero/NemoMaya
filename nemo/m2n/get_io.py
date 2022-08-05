@@ -76,10 +76,10 @@ def get_io(controllers, shapes):
             outputs.append('{}.parentMatrix[0]'.format(ctrl))
 
     for shape in shapes:
-        outputs.append('{}.lodVisibility'.format(shape))
+        plug_world_visibility = '{}.lodVisibility'.format(shape)
         if 'mesh' == cmds.nodeType(shape):
-            outputs.append('{}.worldMesh[0]'.format(shape))
+            outputs.append(('{}.worldMesh[0]'.format(shape), plug_world_visibility))
         elif 'nurbsCurve' == cmds.nodeType(shape):
-            outputs.append('{}.worldSpace[0]'.format(shape))
+            outputs.append(('{}.worldSpace[0]'.format(shape), plug_world_visibility))
 
     return list(set(inputs)), list(set(outputs))

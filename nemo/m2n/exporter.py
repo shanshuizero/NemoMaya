@@ -52,10 +52,12 @@ class Exporter:
         self.parser.set_inputs(inputs)
         succeed = True
         for i, x in enumerate(outputs):
-            if not self.parser.parse(x):
-                succeed = False
+            if isinstance(x, tuple):
+                succeed |= self.parser.parse_shape(x[0], x[1])
+            else:
+                succeed |= self.parser.parse(x)
             if callback:
-                callback(int(100 * float(i+1) / float(len(outputs))))
+                callback(int(100 * float(i + 1) / float(len(outputs))))
         self.parser.clean()
         if not succeed:
             return False

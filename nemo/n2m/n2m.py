@@ -59,7 +59,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
         config['resource'] = os.path.basename(path_resource) if relative_path else path_resource
         with open(path_config, 'w') as f:
             json.dump(config, f)
-        cmds.loadPlugin('NemoMayaNodes', quiet=True)
+        cmds.loadPlugin('Nemo', quiet=True)
     else:
         cmds.loadPlugin(path_bin)
     cmds.loadPlugin('matrixNodes', quiet=True)
@@ -136,6 +136,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     if dll_mode:
         cmds.setAttr('{}.write'.format(node), True)
         cmds.setAttr('{}.nemo'.format(node), os.path.basename(path_config) if relative_path else path_config, type="string")
+        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
     else:
         cmds.setAttr('{}.resource'.format(node), path_resource, type="string")
 
@@ -157,7 +158,6 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
         cmds.sets(components, e=True, forceElement=sg)
 
     if dll_mode:
-        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
         cmds.setAttr('{}.write'.format(node), False)
 
         node_proxy = cmds.createNode("mesh", name='NEMO_PROXY__{}'.format(identifier), p=root)
