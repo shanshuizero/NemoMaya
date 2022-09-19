@@ -1,0 +1,32 @@
+[
+  {
+    "name": "poseInterpolator",
+    "is_dag": true,
+    "filters": [],
+    "methods": [
+        {
+            "name": "poseInterpolator",
+            "returns": [{"name": "output[*]", "type": "Float[]"}],
+            "parameters": [
+              {"name": "driver[*].driverMatrix", "type": "Mat4[]"},
+              {"name": "driver[*].driverTwistAxis", "type": "Int[]"},
+              {"name": "driver[*].driverOrient", "type": "Vec3[]"},
+              {"name": "driver[*].driverRotateOrder", "type": "Int[]"},
+              {"name": "enableRotation", "type": "Bool"},
+              {"name": "pose[*].poseRotation[*]", "type": "Vec4[]", "stack": true},
+              {"name": "pose[*].poseType", "type": "Int[]", "stack": true},
+              {"name": "enableTranslation", "type": "Bool"},
+              {"name": "pose[*].poseTranslation[*]", "type": "Vec3[]", "stack": true},
+              {"name": "outputSmoothing", "type": "Float"}
+            ],
+            "ignores": [
+              "poseName",
+              "poseControllerDataItemName",
+              "poseControllerDataItemType",
+              "driverController",
+              "allowNegativeWeights"
+            ]
+        }
+    ]
+  }
+]

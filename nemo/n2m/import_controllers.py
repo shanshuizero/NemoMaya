@@ -28,7 +28,10 @@ def import_from(data):
     for shape_name, shape_data in data['shapes'].items():
         utils.create_from_path(shape_data['path'], shape_data['type'])
 
-    root = utils.get_root()
+    if not cmds.file(q=True, sn=True):
+        root = 'ROOT'
+    else:
+        root = utils.get_root()
 
     for ctrl_name, ctrl_data in data['controllers'].items():
         import_single(root, ctrl_name, ctrl_data)
@@ -111,6 +114,8 @@ def import_single(root, ctrl_name, data):
 def import_shape(data, ctrl_name):
     if data['type'] == 'nurbsCurve':
         unique_name = import_shape_nurbs_curve(data, ctrl_name)
+    elif data['type'] == 'nurbsSurface':
+        unique_name = import_shape_nurbs_surface(data, ctrl_name)
     elif data['type'] == 'locator':
         unique_name = import_shape_locator(data, ctrl_name)
     else:
@@ -134,6 +139,14 @@ def import_shape_nurbs_curve(data, ctrl_name):
         curve = cmds.curve(degree=data['degree'], p=data['cvs'], k=data['knots'])
     shape_name = cmds.parent(cmds.listRelatives(curve, shapes=True)[0], ctrl_name, s=True, add=True)[0]
     cmds.delete(curve)
+    return cmds.rename(shape_name, data['name'])
+
+
+def import_shape_nurbs_surface(data, ctrl_name):
+    surfaceShape = cmds.surface(du=data['degreeU'], fu=data['formU'].lower(), ku=data['knotsU'], dv=data['degreeV'], fv=data['formV'].lower(), kv=data['knotsV'], p=data['cvs'])
+    temp = cmds.listRelatives(surfaceShape, parent=True)[0]
+    shape_name = cmds.parent(surfaceShape, ctrl_name, s=True, add=True)[0]
+    cmds.delete(temp)
     return cmds.rename(shape_name, data['name'])
 
 

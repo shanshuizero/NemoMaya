@@ -53,9 +53,9 @@ class Exporter:
         succeed = True
         for i, x in enumerate(outputs):
             if isinstance(x, tuple):
-                succeed |= self.parser.parse_shape(x[0], x[1])
+                succeed &= self.parser.parse_shape(x[0], x[1])
             else:
-                succeed |= self.parser.parse(x)
+                succeed &= self.parser.parse(x)
             if callback:
                 callback(int(100 * float(i + 1) / float(len(outputs))))
         self.parser.clean()

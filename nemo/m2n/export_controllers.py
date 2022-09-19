@@ -29,7 +29,11 @@ from nemo.filter import scene_collect
 def export(rig_name, controllers, shapes, init_data=None):
     data = init_data or dict()
     data['name'] = rig_name
-    root = utils.get_root()
+
+    if not cmds.file(q=True, sn=True, shn=True):
+        root = 'ROOT'
+    else:
+        root = utils.get_root()
 
     controllers_data = dict()
     for x in controllers:
@@ -125,6 +129,8 @@ def export_single_controller(root, ctrl, data):
 def export_shape_value(shape, data):
     if data['type'] == 'nurbsCurve':
         valid = export_shape_nurbs_curve(shape, data)
+    elif data['type'] == 'nurbsSurface':
+        valid = export_shape_nurbs_surface(shape, data)
     elif data['type'] == 'locator':
         valid = export_shape_locator(shape, data)
     elif data['type'] in {'clusterHandle', 'softModHandle'}:
@@ -156,6 +162,20 @@ def export_shape_nurbs_curve(shape, data):
     data['form'] = cmds.getAttr('{}.form'.format(shape), asString=True)
     data['knots'] = list(curve.knots())
     data['cvs'] = [[x.x, x.y, x.z] for x in curve.cvPositions()]
+    return True
+
+
+def export_shape_nurbs_surface(shape, data):
+    surface = om2.MFnNurbsSurface(om2.MGlobal.getSelectionListByName(shape).getDagPath(0))
+    if surface.object().isNull():
+        return False
+    data['degreeU'] = surface.degreeInU
+    data['degreeV'] = surface.degreeInV
+    data['formU'] = cmds.getAttr('{}.formU'.format(shape), asString=True)
+    data['formV'] = cmds.getAttr('{}.formV'.format(shape), asString=True)
+    data['knotsU'] = list(surface.knotsInU())
+    data['knotsV'] = list(surface.knotsInV())
+    data['cvs'] = [[x.x, x.y, x.z] for x in surface.cvPositions()]
     return True
 
 

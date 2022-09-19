@@ -49,8 +49,6 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     with open(path_scene) as f:
         import_controllers.import_from(json.load(f))
 
-    root = utils.get_root()
-
     with open(path_config) as f:
         config = json.load(f)
 
@@ -65,6 +63,7 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     cmds.loadPlugin('matrixNodes', quiet=True)
 
     if dll_mode:
+        root = utils.get_root()
         node = cmds.createNode('Nemo', name='NEMO__{}'.format(identifier), p=root)
     else:
         node = cmds.createNode(identifier)
@@ -140,22 +139,22 @@ def assemble(path_config, path_scene, path_bin, path_resource, path_shading, ide
     else:
         cmds.setAttr('{}.resource'.format(node), path_resource, type="string")
 
-    ## assign shaders based on MAT json
-    with open(path_shading) as f:
-        data = json.load(f)
-    shading_data = dict()
-    for shader, members in data.items():
-        if shader == 'lambert1':
-            sg = 'initialShadingGroup'
-        else:
-            sg = cmds.listConnections(shader, t='shadingEngine')
-            if len(sg) != 1:
-                raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
-            sg = sg[0]
-        shading_data[sg] = members
-
-    for sg, components in shading_data.items():
-        cmds.sets(components, e=True, forceElement=sg)
+    if path_shading:
+        ## assign shaders based on MAT json
+        with open(path_shading) as f:
+            data = json.load(f)
+        shading_data = dict()
+        for shader, members in data.items():
+            if shader == 'lambert1':
+                sg = 'initialShadingGroup'
+            else:
+                sg = cmds.listConnections(shader, t='shadingEngine')
+                if len(sg) != 1:
+                    raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
+                sg = sg[0]
+            shading_data[sg] = members
+        for sg, components in shading_data.items():
+            cmds.sets(components, e=True, forceElement=sg)
 
     if dll_mode:
         cmds.setAttr('{}.write'.format(node), False)

@@ -51,9 +51,6 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         self.layout = self.create_ui()
         self.setLayout(self.layout)
 
-    def dll_mode(self):
-        return self.options_runtime.isChecked()
-
     def create_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
@@ -99,10 +96,6 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         layout.addLayout(layout_output)
 
         layout_options = QtWidgets.QHBoxLayout()
-        self.options_runtime = dayu_widgets.MCheckBox("runtime")
-        if "win32" == sys.platform:
-            self.options_runtime.setEnabled(False)
-        layout_options.addWidget(self.options_runtime)
         self.options_relative = dayu_widgets.MCheckBox("relative")
         layout_options.addWidget(self.options_relative)
         layout.addLayout(layout_options)
@@ -113,32 +106,20 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         return layout
 
     @staticmethod
-    def ext(dll_mode):
-        if dll_mode:
-            return "dll" if "win32" == sys.platform else "so"
-        else:
-            return "mll" if "win32" == sys.platform else "so"
+    def ext():
+        return "dll" if "win32" == sys.platform else "so"
 
     @staticmethod
-    def binary_name(identifier, dll_mode):
-        if dll_mode:
-            return "{}.dll".format(identifier) if "win32" == sys.platform else "lib{}.so".format(identifier)
-        else:
-            return "{}.{}".format(identifier, WidgetNemoAssembler.ext(dll_mode))
+    def binary_name(identifier):
+        return "{}.dll".format(identifier) if "win32" == sys.platform else "lib{}.so".format(identifier)
 
     def on_select_receive_folder(self, path):
         try:
-            binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(self.dll_mode())))
-            if "win32" == sys.platform and not binary and glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(not self.dll_mode()))):
-                self.options_runtime.setChecked(not self.dll_mode())
-                binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext(self.dll_mode())))
-            binary = binary[0]
+            binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext()))[0]
 
             name = os.path.splitext(os.path.basename(binary))[0]
             if "win32" != sys.platform and name.startswith("lib"):
                 name = name[3:]
-                self.options_runtime.setChecked(True)
-
             self.label_name.setText(name)
         except Exception as e:
             self.label_name.setText(WidgetNemoAssembler.symbol_unknown)
@@ -167,7 +148,7 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
 
         dir_receive = str(self.browser_dir_receive.dayu_path)
         path_config = "{}/{}__CONFIG.json".format(dir_receive, name)
-        path_bin = "{}/{}".format(dir_receive, WidgetNemoAssembler.binary_name(name, self.dll_mode()))
+        path_bin = "{}/{}".format(dir_receive, WidgetNemoAssembler.binary_name(name))
         dir_upload = str(self.browser_dir_upload.dayu_path)
         path_resource = "{}/{}__RESOURCE.nemodata".format(dir_upload, name)
         path_scene = "{}/{}__SCENE.json".format(dir_upload, name)
@@ -188,17 +169,13 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
                     return
             path_resource = clone(path_resource, dir_output)
             path_bin = clone(path_bin, dir_output)
-            if self.dll_mode():
-                path_config = clone(path_config, dir_output)
-                path_shading = clone(path_shading, dir_output)
+            path_config = clone(path_config, dir_output)
+            path_shading = clone(path_shading, dir_output)
 
             from nemo.n2m import n2m
-            if self.dll_mode():
-                cmds.file(path_materials, o=True, f=True)
-            else:
-                cmds.file(new=True, f=True)
+            cmds.file(path_materials, o=True, f=True)
             cmds.file(rename='{}/{}.ma'.format(dir_output, name))
-            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, self.dll_mode(), relative_path=self.options_relative.isChecked())
+            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, True, relative_path=self.options_relative.isChecked())
             cmds.file(save=True, type="mayaAscii")
             # TODO file just created is highly unstable, reopen it would get fine for unknown reason
             cmds.file('{}/{}.ma'.format(dir_output, name), open=True, f=True)

@@ -21,6 +21,7 @@
         "name": "weightDriverPoses",
         "returns": [{"name": "output[*]", "type": "Float[]"}],
         "parameters": [
+          {"name": "active", "type": "Bool"},
           {"name": "type", "type": "Int"},
           {"name": "rbfMode", "type": "Int"},
           {"name": "input[*]", "type": "Float[]", "stack": true},
@@ -32,6 +33,7 @@
         "name": "weightDriverDrivers",
         "returns": [{"name": "output[*]", "type": "Float[]"}],
         "parameters": [
+          {"name": "active", "type": "Bool"},
           {"name": "type", "type": "Int"},
           {"name": "rbfMode", "type": "Int"},
           {"name": "twistAxis", "type": "Int"},

@@ -158,7 +158,7 @@ def get_controllers(patterns, curve=True, surface=False, free=True, visible=True
                     continue
                 if curve and cmds.nodeType(s) == 'nurbsCurve':
                     pass_test = True
-                if surface and cmds.nodeType(obj) == "nurbsSurface":
+                if surface and cmds.nodeType(s) == "nurbsSurface":
                     pass_test = True
                 if not curve and not surface:
                     pass_test = True

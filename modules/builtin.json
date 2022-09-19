@@ -28,7 +28,7 @@
         "name": "inverseLocal",
         "returns": [{"name": "inverseMatrix", "type": "Mat4"}],
         "parameters": [{"name": "matrix", "type": "Mat4"}],
-        "ignores": ["translate", "rotate"]
+        "ignores": ["translate", "rotate", "scale"]
       },
       {
         "name": "worldMatrixM",
@@ -177,6 +177,36 @@
         "parameters": [
           {"name": "vector1", "type": "Vec3"},
           {"name": "vector2", "type": "Vec3"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "animBlendNodeAdditiveRotation",
+    "methods": [
+      {
+        "returns": [{"name": "output", "type": "Vec3"}],
+        "parameters": [
+          {"name": "weightA", "type": "Float"},
+          {"name": "weightB", "type": "Float"},
+          {"name": "inputA", "type": "Vec3"},
+          {"name": "inputB", "type": "Vec3"},
+          {"name": "rotationInterpolation", "type": "Int"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "animBlendNodeAdditiveScale",
+    "methods": [
+      {
+        "returns": [{"name": "output", "type": "Float"}],
+        "parameters": [
+          {"name": "weightA", "type": "Float"},
+          {"name": "weightB", "type": "Float"},
+          {"name": "inputA", "type": "Float"},
+          {"name": "inputB", "type": "Float"},
+          {"name": "accumulationMode", "type": "Int"}
         ]
       }
     ]
@@ -352,13 +382,14 @@
       {
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
         "parameters": [
+          {"name": "nodeState", "type": "Int"},
           {"name": "input[$0].inputGeometry", "type": "Shape"},
           {"name": "envelope", "type": "Float"},
           {"name": "origin", "type": "Int"},
           {"name": "weight[?]", "type": "Float[]"},
           {
             "name": "inputTarget[$0].inputTargetGroup[?].inputTargetItem[?].inputGeomTarget",
-            "type": "Shape[]",
+            "type": "Generic[]",
             "exclude_default": true
           }
         ]
@@ -371,7 +402,7 @@
       {
         "returns": [{"name": "output", "type": "Float"}],
         "parameters": [
-          {"name": "input[*]", "type": "Float[]", "stack": true},
+          {"name": "input[?]", "type": "Float[]", "stack": true},
           {"name": "attributesBlender", "type": "Float"}
         ]
       }
@@ -458,9 +489,9 @@
       {
         "returns": [{"name": "outputB", "type": "Float"}],
         "parameters": [
-          {"name": "inputG", "type": "Float"},
-          {"name": "minG", "type": "Float"},
-          {"name": "maxG", "type": "Float"}
+          {"name": "inputB", "type": "Float"},
+          {"name": "minB", "type": "Float"},
+          {"name": "maxB", "type": "Float"}
         ]
       }
     ]
@@ -500,13 +531,7 @@
   {
     "name": "cluster",
     "is_deformer": true,
-    "ignores": ["clusterXforms", "relative"],
-    "filters": [
-      {
-        "target": "outputGeometry[$0]",
-        "actions": [{"name": "weights[$0].weights[*]", "action": "select"}]
-      }
-    ],
+    "ignores": ["relative"],
     "methods": [
       {
         "is_dummy": true,
@@ -515,59 +540,17 @@
         "parameters": [{"name": "input[0].inputGeometry", "type": "Shape"}]
       },
       {
-        "name": "clusterFull",
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
-        "ignores": ["geomMatrix[0]"],
+        "ignores": ["geomMatrix", "weights", "groupId"],
         "parameters": [
+          {"name": "nodeState", "type": "Int"},
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
           {"name": "matrix", "type": "Mat4"},
           {"name": "bindPreMatrix", "type": "Mat4"},
-          {"name": "angleInterpolation", "type": "Int"},
-          {"name": "weights[$0].weights[?]", "type": "Float[]"},
-          {"name": "translate", "external": "transform", "type": "Vec3"},
-          {"name": "rotate", "external": "transform", "type": "Vec3"},
-          {"name": "rotateOrder", "external": "transform", "type": "Int"},
-          {"name": "scale", "external": "transform", "type": "Vec3"},
-          {"name": "rotatePivot", "external": "transform", "type": "Vec3"},
-          {"name": "scalePivot", "external": "transform", "type": "Vec3"},
-          {
-            "name": "rotatePivotTranslate",
-            "external": "transform",
-            "type": "Vec3"
-          },
-          {
-            "name": "scalePivotTranslate",
-            "external": "transform",
-            "type": "Vec3"
-          }
-        ]
-      },
-      {
-        "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
-        "ignores": ["geomMatrix[0]"],
-        "parameters": [
-          {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
-          {"name": "input[$0].groupId", "type": "Components"},
-          {"name": "matrix", "type": "Mat4"},
-          {"name": "bindPreMatrix", "type": "Mat4"},
-          {"name": "angleInterpolation", "type": "Int"},
-          {"name": "weights[$0].weights[?]", "type": "Float[]"},
-          {"name": "translate", "external": "transform", "type": "Vec3"},
-          {"name": "rotate", "external": "transform", "type": "Vec3"},
-          {"name": "rotateOrder", "external": "transform", "type": "Int"},
-          {"name": "scale", "external": "transform", "type": "Vec3"},
-          {"name": "rotatePivot", "external": "transform", "type": "Vec3"},
-          {"name": "scalePivot", "external": "transform", "type": "Vec3"},
-          {
-            "name": "rotatePivotTranslate",
-            "external": "transform",
-            "type": "Vec3"
-          },
-          {
-            "name": "scalePivotTranslate",
-            "external": "transform",
-            "type": "Vec3"
-          }
+          {"name": "preMatrix", "type": "Mat4"},
+          {"name": "weightedMatrix", "type": "Mat4"},
+          {"name": "postMatrix", "type": "Mat4"},
+          {"name": "angleInterpolation", "type": "Int"}
         ]
       }
     ]
@@ -728,11 +711,21 @@
     "is_deformer": true,
     "methods": [
       {
+        "is_dummy": true,
+        "returns": [{"name": "outputGeometry[0]", "type": "Shape"}],
+        "parameters": [{"name": "input[0].inputGeometry", "type": "Shape"}]
+      },
+      {
         "ignores": ["input[0].groupId"],
         "returns": [{"name": "outputGeometry[0]", "type": "Mesh"}],
         "parameters": [
+          {"name": "nodeState", "type": "Int"},
           {"name": "input[0].inputGeometry", "type": "Mesh", "mutable": true},
           {"name": "envelope", "type": "Float"},
+          {"name": "weightList[0].weights[?]", "type": "Float[]"},
+          {"name": "smoothingIterations", "type": "Int"},
+          {"name": "smoothingStep", "type": "Float"},
+          {"name": "displacement", "type": "Float"},
           {"name": "scale", "type": "Vec3"},
           {"name": "distanceWeight", "type": "Float"}
         ]
@@ -755,6 +748,16 @@
         "returns": [{"name": "distance", "type": "Float"}],
         "parameters": [
           {"name": "inMatrix1", "type": "Mat4"},
+          {"name": "inMatrix2", "type": "Mat4"}
+        ]
+      },
+      {
+        "name": "distanceBetween",
+        "returns": [{"name": "distance", "type": "Float"}],
+        "parameters": [
+          {"name": "point1", "type": "Vec3"},
+          {"name": "inMatrix1", "type": "Mat4"},
+          {"name": "point2", "type": "Vec3"},
           {"name": "inMatrix2", "type": "Mat4"}
         ]
       }
@@ -818,6 +821,7 @@
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
         "parameters": [
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "envelope", "type": "Float"},
           {"name": "weightList[$0].weights[?]", "type": "Float[]"},
           {"name": "deformedLatticePoints", "type": "Lattice"},
           {"name": "deformedLatticeMatrix", "type": "Mat4"},
@@ -833,6 +837,7 @@
         "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
         "parameters": [
           {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "envelope", "type": "Float"},
           {"name": "input[$0].groupId", "type": "Components"},
           {"name": "deformedLatticePoints", "type": "Lattice"},
           {"name": "deformedLatticeMatrix", "type": "Mat4"},
@@ -848,6 +853,10 @@
   {
     "name": "follicle",
     "is_dag": true,
+    "filters": [
+      {"target": "outHair", "actions": [{"action": "clear"}]},
+      {"target": "outCurve", "actions": [{"action": "clear"}]}
+    ],
     "methods": [
       {
         "name": "follicleTranslateMesh",
@@ -1019,15 +1028,17 @@
   },
   {
     "name": "loft",
-    "ignores": ["reverseSurfaceNormals"],
     "methods": [
       {
         "returns": [{"name": "outputSurface", "type": "Surface"}],
         "parameters": [
           {"name": "inputCurve[*]", "type": "Curve[]", "stack": true},
+          {"name": "reverse[*]", "type": "Bool[]", "stack": true},
+          {"name": "autoReverse", "type": "Bool"},
           {"name": "sectionSpans", "type": "Int"},
           {"name": "degree", "type": "Int"},
-          {"name": "uniform", "type": "Bool"}
+          {"name": "uniform", "type": "Bool"},
+          {"name": "reverseSurfaceNormals", "type": "Bool"}
         ]
       }
     ]
@@ -1090,6 +1101,20 @@
           {"name": "geometryPath", "type": "Curve"},
           {"name": "uValue", "type": "Float"},
           {"name": "fractionMode", "type": "Bool"}
+        ]
+      },
+      {
+        "name": "motionPathRotate",
+        "returns": [{"name": "rotate", "type": "Vec3"}],
+        "parameters": [
+          {"name": "geometryPath", "type": "Curve"},
+          {"name": "uValue", "type": "Float"},
+          {"name": "fractionMode", "type": "Bool"},
+          {"name": "follow", "type": "Bool"},
+          {"name": "worldUpType", "type": "Int"},
+          {"name": "worldUpMatrix", "type": "Mat4"},
+          {"name": "frontAxis", "type": "Int"},
+          {"name": "inverseFront", "type": "Bool"}
         ]
       }
     ]
@@ -1621,7 +1646,17 @@
     "name": "pointOnCurveInfo",
     "methods": [
       {
+        "name": "pointOnCurvePosition",
         "returns": [{"name": "position", "type": "Vec3"}],
+        "parameters": [
+          {"name": "inputCurve", "type": "Curve"},
+          {"name": "parameter", "type": "Float"},
+          {"name": "turnOnPercentage", "type": "Bool"}
+        ]
+      },
+      {
+        "name": "pointOnCurveTangent",
+        "returns": [{"name": "tangent", "type": "Vec3"}],
         "parameters": [
           {"name": "inputCurve", "type": "Curve"},
           {"name": "parameter", "type": "Float"},
@@ -1772,8 +1807,10 @@
     "methods": [
       {
         "returns": [{"name": "outputcurve", "type": "Curve"}],
+        "ignores": ["form"],
         "parameters": [
           {"name": "inputPolymesh", "type": "Mesh"},
+          {"name": "inputMat", "type": "Mat4"},
           {"name": "inputComponents", "type": "Components"},
           {"name": "degree", "type": "Int"}
         ]
@@ -1789,6 +1826,22 @@
         "returns": [{"name": "output", "type": "Mesh"}],
         "ignores": ["useOldPolyArchitecture"],
         "parameters": [{"name": "inputPolymesh", "type": "Mesh"}]
+      }
+    ]
+  },
+  {
+    "name": "ramp",
+    "methods": [
+      {
+        "returns": [{"name": "outAlpha", "type": "Float"}],
+        "parameters": [
+          {"name": "uvCoord", "type": "Vec2"},
+          {"name": "interpolation", "type": "Int"},
+          {"name": "noise", "type": "Float"},
+          {"name": "noiseFreq", "type": "Float"},
+          {"name": "colorEntryList[*].position", "type": "Float[]"},
+          {"name": "colorEntryList[*].color", "type": "Vec3[]"}
+        ]
       }
     ]
   },
@@ -1992,7 +2045,8 @@
       "blendWeights",
       "basePoints",
       "driverPoints",
-      "deformUserNormals"
+      "deformUserNormals",
+      "weightList"
     ],
     "methods": [
       {
@@ -2005,6 +2059,7 @@
         "returns": [{"name": "outputGeometry[0]", "type": "Shape"}],
         "ignores": ["bindPreMatrix"],
         "parameters": [
+          {"name": "nodeState", "type": "Int"},
           {"name": "input[0].inputGeometry", "type": "Shape"},
           {"name": "envelope", "type": "Float"},
           {"name": "skinningMethod", "type": "Int"},
@@ -2066,7 +2121,7 @@
   {
     "name": "tweak",
     "is_deformer": true,
-    "ignores": ["vlist"],
+    "ignores": ["vlist", "nodeState"],
     "methods": [
       {
         "is_dummy": true,
@@ -2128,14 +2183,31 @@
     ]
   },
   {
+    "name": "vectorProduct",
+    "methods": [
+      {
+        "name": "vectorProductMatrix",
+        "returns": [{"name": "output", "type": "Vec3"}],
+        "parameters": [
+          {"name": "operation", "type": "Int"},
+          {"name": "input1", "type": "Vec3"},
+          {"name": "matrix", "type": "Mat4"}
+        ]
+      }
+    ]
+  },
+  {
     "name": "wire",
     "is_deformer": true,
     "ignores": ["dropoffDistance"],
     "methods": [
       {
-        "returns": [{"name": "outputGeometry[0]", "type": "Shape"}],
+        "returns": [{"name": "outputGeometry[$0]", "type": "Shape"}],
         "parameters": [
-          {"name": "input[0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "nodeState", "type": "Int"},
+          {"name": "input[$0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "envelope", "type": "Float"},
+          {"name": "scale[0]", "type": "Float"},
           {"name": "rotation", "type": "Float"},
           {"name": "baseWire[0]", "type": "Curve"},
           {"name": "deformedWire[0]", "type": "Curve"},
@@ -2157,7 +2229,6 @@
     "methods": [
       {
         "ignores": [
-          "maxDistance",
           "autoWeightThreshold",
           "exclusiveBind",
           "falloffMode"
@@ -2166,7 +2237,21 @@
         "parameters": [
           {"name": "envelope", "type": "Float"},
           {"name": "input[0].inputGeometry", "type": "Shape", "mutable": true},
-          {"name": "driverPoints[0]", "type": "Mesh"}
+          {"name": "driverPoints[0]", "type": "Mesh"},
+          {"name": "geomMatrix", "type": "Mat4"},
+          {"name": "maxDistance", "type": "Float"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "wtAddMatrix",
+    "methods": [
+      {
+        "returns": [{"name": "matrixSum", "type": "Mat4"}],
+        "parameters": [
+          {"name": "wtMatrix[*].matrixIn", "type": "Mat4[]"},
+          {"name": "wtMatrix[*].weightIn", "type": "Float[]"}
         ]
       }
     ]
