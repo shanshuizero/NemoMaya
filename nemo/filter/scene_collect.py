@@ -145,31 +145,46 @@ def get_extra(ctrl):
     return None if is_channel_box_driven(parent) else parent
 
 
+def match(pattern, curve, surface, free, visible):
+    objects = cmds.ls(pattern, transforms=True)
+    controllers = []
+    for obj in objects:
+        shapes = cmds.listRelatives(obj, shapes=True, ni=True, pa=True) or []
+        pass_test = False
+        for s in shapes:
+            if cmds.getAttr('{}.overrideEnabled'.format(s)) and cmds.getAttr('{}.overrideDisplayType'.format(s)):
+                continue
+            if curve and cmds.nodeType(s) == 'nurbsCurve':
+                pass_test = True
+            if surface and cmds.nodeType(s) == "nurbsSurface":
+                pass_test = True
+            if not curve and not surface:
+                pass_test = True
+        if pass_test:
+            controllers.append(obj)
+
+    if free:
+        controllers = [ctrl for ctrl in controllers if not is_channel_box_locked(ctrl)]
+    if visible:
+        controllers = [ctrl for ctrl in controllers if not is_world_visibility_always_off(ctrl, controllers)]
+    return controllers
+
+
 def get_controllers(patterns, curve=True, surface=False, free=True, visible=True):
     results = []
-    for pattern in patterns:
-        objects = cmds.ls(pattern, transforms=True)
-        controllers = []
-        for obj in objects:
-            shapes = cmds.listRelatives(obj, shapes=True, ni=True, pa=True) or []
-            pass_test = False
-            for s in shapes:
-                if cmds.getAttr('{}.overrideEnabled'.format(s)) and cmds.getAttr('{}.overrideDisplayType'.format(s)):
-                    continue
-                if curve and cmds.nodeType(s) == 'nurbsCurve':
-                    pass_test = True
-                if surface and cmds.nodeType(s) == "nurbsSurface":
-                    pass_test = True
-                if not curve and not surface:
-                    pass_test = True
-            if pass_test:
-                controllers.append(obj)
 
-        if free:
-            controllers = [ctrl for ctrl in controllers if not is_channel_box_locked(ctrl)]
-        if visible:
-            controllers = [ctrl for ctrl in controllers if not is_world_visibility_always_off(ctrl, controllers)]
-        results.extend(controllers)
+    for pattern in patterns:
+        if pattern.startswith('!'):
+            continue
+        results.extend(match(pattern, curve, surface, free, visible))
+
+    # negative select should happen at the end
+    for pattern in patterns:
+        if not pattern.startswith('!'):
+            continue
+        to_erase = match(pattern[1:], curve, surface, free, visible)
+        results = [x for x in results if x not in to_erase]
+
     return results
 
 

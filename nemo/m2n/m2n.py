@@ -23,6 +23,8 @@ import os
 import json
 import shutil
 import imp
+import tempfile
+import zipfile
 
 from maya import cmds
 
@@ -33,27 +35,25 @@ import export_materials
 
 
 def export(identifier, controllers, shapes, project_dir, addons=[], debug=False, callback=None, material=False):
-    if os.path.exists(project_dir):
-        shutil.rmtree(project_dir)
-    os.mkdir(project_dir)
-
     inputs, outputs = get_io(controllers, shapes)
 
+    tmpdirname = tempfile.mkdtemp()
     scene_data = export_controllers.export(identifier, controllers, shapes)
     if material:
-        material_mapping, material_drivers = export_materials.export([cmds.ls(x)[0] for x in shapes], controllers, '{}/{}__MAT.ma'.format(project_dir, identifier))
-        path_shading = '{}/{}__MAT.json'.format(project_dir, identifier)
+        material_mapping, material_drivers = export_materials.export([cmds.ls(x)[0] for x in shapes], controllers,
+                                                                     '{}/{}__MAT.ma'.format(tmpdirname, identifier))
+        path_shading = '{}/{}__MAT.json'.format(tmpdirname, identifier)
         with open(path_shading, 'w') as f:
             json.dump(material_mapping, f)
         scene_data['connections'] = material_drivers
 
-    path_scene = '{}/{}__SCENE.json'.format(project_dir, identifier)
+    path_scene = '{}/{}__SCENE.json'.format(tmpdirname, identifier)
     with open(path_scene, 'w') as f:
         json.dump(scene_data, f)
 
     import NemoMaya
     exporter = Exporter(NemoMaya.Parser, debug)
-    exporter.set_project_dir(project_dir)
+    exporter.set_project_dir(tmpdirname)
     exporter.set_identifier(identifier)
 
     exporter.set_modules_dir(os.environ['NEMO_MODULES'])
@@ -72,8 +72,22 @@ def export(identifier, controllers, shapes, project_dir, addons=[], debug=False,
         addons_data += mod.add_custom_parameters(exporter.parser)
 
     if not exporter.parse(inputs, outputs, callback):
-        raise RuntimeError("parsing maya file failed, maybe some features unspported yet, please check log for details.")
+        for x in os.listdir(tmpdirname):
+            if os.path.splitext(x)[-1] == '.txt':
+                shutil.move('{}/{}'.format(tmpdirname, x), '{}/{}'.format(project_dir, x))
+        raise RuntimeError("parsing maya file failed, maybe some features unspported yet, please check log at '{}' for details.".format(project_dir))
     # WARNING: addons_data can only be dropped after this moment as parsing done.
     del addons_data
 
-    return exporter.path_graph(), exporter.path_resource(), path_scene, exporter.path_debug() if debug else None
+    path_graph = '{}/{}__GRAPH.json'.format(project_dir, identifier)
+    path_export = '{}/{}__EXPORT.zip'.format(project_dir, identifier)
+    for x in [path_graph, path_export]:
+        if os.path.exists(x):
+            raise RuntimeError("{} already exist".format(x))
+    shutil.move(exporter.path_graph(), path_graph)
+
+    with zipfile.ZipFile(path_export, 'w') as zip:
+        for x in os.listdir(tmpdirname):
+            zip.write('{}/{}'.format(tmpdirname, x), x)
+
+    shutil.rmtree(tmpdirname)

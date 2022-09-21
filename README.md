@@ -25,23 +25,24 @@
 
 导出成功后的文件：
 
-- **Graph JSON** 描述了Rig的运算逻辑。Graph JSON中的节点命名会脱敏处理。
-- Resource 是特殊的nemodata格式，它包含了模型，权重，修型等数据。
-- Scene JSON 主要描述了控制器的数据。
-- Debug JSON 使用户可以在本地[检查](#检查)效果错误及其具体原因。
-- MAT (JSON & ma) 包含了资产使用的材质信息。
+- **Graph JSON**  
+  描述了Rig的运算逻辑。Graph JSON中的节点命名会脱敏处理。
+- **EXPORT.zip**  
+  用于后续[组装](#组装)文件。普通用户无需了解其具体内容。
+  - Resource 是特殊的nemodata格式，它包含了模型，权重，修型等数据。
+  - Scene JSON 主要描述了控制器的数据。
+  - Debug JSON 使用户可以在本地[检查](#检查)效果错误及其具体原因。
+  - MAT (JSON & ma) 包含了资产使用的材质信息。
 
-**只有 Graph JSON 需要发送到服务器处理**， 其它的文件会在后续[组装](#组装)文件时用到。
+只有 **Graph JSON** 需要发送到服务器处理，通过重命名脱敏以及将资产中的几何数据保留在本地，这些隐私数据将无需对我们分享。
 
-通过将资产中的几何数据隔离到Resource文件中以及重命名脱敏，这些隐私数据将无需对我们分享。
-
-### 已知限制
+### 导出时限制
+此处列出会导出失败的绑定设置，另请参考[影响效果的设置](#已知可能影响效果的设置)
 - 不可以出现循环依赖(Cycle Warning)
 - 表达式的部分语法暂不支持 
-  * 连续赋值，如`a=b=1`
+  - 连续赋值，如`a=b=1`
 - 不支持动力学系统(毛发或肌肉)
-- IK
-  * preferredAngle会导致误差
+  - follicle需被禁用，或仅使用outTranslate而不使用outHair和outCurve等
 
 ## 服务器处理
 
@@ -49,22 +50,17 @@
 
 服务器回传的内容包括：
 
-- 编译结果(dll/so)
-- Config JSON
+- BINARY.zip
+  - 编译结果(dll/so)
+  - Config JSON
 
 ## 组装
 
-从服务器发送回的数据后，用户可以在本地重新组装成新的Maya文件。
+从服务器发送回的`BINARY.zip`后，用户可以在本地和`EXPORT.zip`重新组装成新的Maya文件。
 
-主要用到的数据包括：
-
-- 描述控制器的Scene JSON
-- 存储了模型，权重，修型等数据的nemodata
-- 描述了材质信息的MAT(ma & JSON)
-
-组装完成后，工具将会把生成的Maya文件和运行时所依赖的文件保存至指定的Runtime文件夹内（注意这个文件夹在保存前会被工具清空）  
+组装完成后，工具将会把生成的Maya文件和运行时所依赖的文件保存至指定的Runtime文件夹内。  
 如果组装时选择相对路径模式，那么可以把这个文件夹整体打包到别处使用。  
-如果选择绝对路径模式，那么移动时需要改变maya文件和config json的路径。
+如果选择绝对路径模式，那么移动时需要改变maya文件内和config json内的路径。
 
 ## 运行时
 
@@ -123,9 +119,13 @@ print cmds.NemoCheck(path_debug, path_resource, ns='<your-namespace>', od='<your
 此时可以选择将 verbose 设置为 1，并打开日志记录。日志中可以看到在哪个节点发生了崩溃。  
 将 verbose 设置为 2 时，NemoCheck 还会在检查前就为所有节点记录 closure，但这样会导致执行过程相当漫长，因此仅在必要时如此做。
 
-### 已知限制
+### 已知可能影响效果的设置
 
 - closestPointOnSurface在端点处可能出现U或V的坐标与Maya发生很大漂移，这是因为在极点处U或V不影响取点的位置。
 - closestPointOnMesh的最近点如果落在模型边上可能导致面ID与Maya不一致。
 - transferAttriutes在投影和模型边缘非常接近时结果会不稳定。
 - 欧拉角与四元数转化时结果可能会变化，这是因为同一个旋转对应有两个符号相反的四元数，而对应的欧拉角则更多。
+- IK
+  - preferredAngle会导致误差
+- noise无法准确复现
+  - ramp节点

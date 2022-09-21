@@ -21,18 +21,14 @@
 
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtWidgets import QMessageBox
-import maya.OpenMayaUI as omui
-from maya import cmds
-
-import os
-import glob
-import sys
 
 import Qt
 import dayu_widgets
 
 
 def maya_main_window():
+    import maya.OpenMayaUI as omui
+    import sys
     main_window_ptr = omui.MQtUtil.mainWindow()
     if sys.version_info.major == 2:
         return Qt.QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
@@ -41,7 +37,6 @@ def maya_main_window():
 
 
 class WidgetNemoAssembler(QtWidgets.QWidget):
-    symbol_unknown = "<Unknown>"
 
     def __init__(self, parent=maya_main_window()):
         super(WidgetNemoAssembler, self).__init__()
@@ -54,49 +49,41 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
     def create_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
-        layout_name = QtWidgets.QHBoxLayout()
-        label_head = dayu_widgets.MLabel(text="Name:")
-        label_head.set_elide_mode(QtCore.Qt.ElideLeft)
-        label_head.setFixedWidth(60)
-        layout_name.addWidget(label_head)
-        self.label_name = dayu_widgets.MLabel(text=WidgetNemoAssembler.symbol_unknown)
-        self.label_name.setAlignment(QtCore.Qt.AlignCenter)
-        layout_name.addWidget(self.label_name)
-        layout.addLayout(layout_name)
+        layout_export = QtWidgets.QHBoxLayout()
+        layout_export.addWidget(dayu_widgets.MLabel("Export: "))
+        self.browser_zip_export = dayu_widgets.MClickBrowserFileToolButton()
+        layout_export.addWidget(self.browser_zip_export)
+        label_export = dayu_widgets.MLabel("<Select Exported Zip>")
+        label_export.set_elide_mode(QtCore.Qt.ElideLeft)
+        layout_export.addWidget(label_export)
+        self.browser_zip_export.set_dayu_filters([".zip"])
+        self.browser_zip_export.sig_file_changed.connect(label_export.setText)
+        layout.addLayout(layout_export)
 
-        layout_receive = QtWidgets.QHBoxLayout()
-        layout_receive.addWidget(dayu_widgets.MLabel("Receive:"))
-        self.browser_dir_receive = dayu_widgets.MClickBrowserFolderToolButton()
-        layout_receive.addWidget(self.browser_dir_receive)
-        label_receive = dayu_widgets.MLabel("<Select Folder>")
-        label_receive.set_elide_mode(QtCore.Qt.ElideLeft)
-        layout_receive.addWidget(label_receive)
-        self.browser_dir_receive.sig_folder_changed.connect(label_receive.setText)
-        self.browser_dir_receive.sig_folder_changed.connect(self.on_select_receive_folder)
-        layout.addLayout(layout_receive)
-
-        layout_upload = QtWidgets.QHBoxLayout()
-        layout_upload.addWidget(dayu_widgets.MLabel("Export: "))
-        self.browser_dir_upload = dayu_widgets.MClickBrowserFolderToolButton()
-        layout_upload.addWidget(self.browser_dir_upload)
-        self.label_upload = dayu_widgets.MLabel("<Select Folder>")
-        self.label_upload.set_elide_mode(QtCore.Qt.ElideLeft)
-        layout_upload.addWidget(self.label_upload)
-        self.browser_dir_upload.sig_folder_changed.connect(self.on_select_upload_folder)
-        layout.addLayout(layout_upload)
+        layout_binary = QtWidgets.QHBoxLayout()
+        layout_binary.addWidget(dayu_widgets.MLabel("Binary:"))
+        self.browser_zip_binary = dayu_widgets.MClickBrowserFileToolButton()
+        layout_binary.addWidget(self.browser_zip_binary)
+        label_binary = dayu_widgets.MLabel("<Select Received Zip>")
+        label_binary.set_elide_mode(QtCore.Qt.ElideLeft)
+        layout_binary.addWidget(label_binary)
+        self.browser_zip_binary.set_dayu_filters([".zip"])
+        self.browser_zip_binary.sig_file_changed.connect(label_binary.setText)
+        layout.addLayout(layout_binary)
 
         layout_output = QtWidgets.QHBoxLayout()
         layout_output.addWidget(dayu_widgets.MLabel("Runtime:"))
         self.browser_dir_output = dayu_widgets.MClickBrowserFolderToolButton()
         layout_output.addWidget(self.browser_dir_output)
-        self.label_output = dayu_widgets.MLabel("<Select Folder>")
-        self.label_output.set_elide_mode(QtCore.Qt.ElideLeft)
-        layout_output.addWidget(self.label_output)
-        self.browser_dir_output.sig_folder_changed.connect(self.on_select_output_folder)
+        label_output = dayu_widgets.MLabel("<Select Output Path>")
+        label_output.set_elide_mode(QtCore.Qt.ElideLeft)
+        layout_output.addWidget(label_output)
+        self.browser_dir_output.sig_folder_changed.connect(label_output.setText)
         layout.addLayout(layout_output)
 
         layout_options = QtWidgets.QHBoxLayout()
         self.options_relative = dayu_widgets.MCheckBox("relative")
+        self.options_relative.setChecked(True)
         layout_options.addWidget(self.options_relative)
         layout.addLayout(layout_options)
 
@@ -105,80 +92,13 @@ class WidgetNemoAssembler(QtWidgets.QWidget):
         layout.addWidget(btn_assemble)
         return layout
 
-    @staticmethod
-    def ext():
-        return "dll" if "win32" == sys.platform else "so"
-
-    @staticmethod
-    def binary_name(identifier):
-        return "{}.dll".format(identifier) if "win32" == sys.platform else "lib{}.so".format(identifier)
-
-    def on_select_receive_folder(self, path):
-        try:
-            binary = glob.glob('{}/*.{}'.format(path, WidgetNemoAssembler.ext()))[0]
-
-            name = os.path.splitext(os.path.basename(binary))[0]
-            if "win32" != sys.platform and name.startswith("lib"):
-                name = name[3:]
-            self.label_name.setText(name)
-        except Exception as e:
-            self.label_name.setText(WidgetNemoAssembler.symbol_unknown)
-
-    def on_select_upload_folder(self, path):
-        if path is None:
-            return
-        if path == self.browser_dir_output.dayu_path:
-            QMessageBox.critical(self, "Error", "Export folder cannot be the same with Output folder")
-            return
-        self.label_upload.setText(path)
-
-    def on_select_output_folder(self, path):
-        if path is None:
-            return
-        if path == self.browser_dir_upload.dayu_path:
-            QMessageBox.critical(self, "Error", "Output folder cannot be the same with Export folder")
-            return
-        self.label_output.setText(path)
-
     def on_assemble(self):
-        name = self.label_name.text()
-        if name == WidgetNemoAssembler.symbol_unknown:
-            QMessageBox.critical(self, "Error", "Select Receive folder containing correct binary.")
-            return
-
-        dir_receive = str(self.browser_dir_receive.dayu_path)
-        path_config = "{}/{}__CONFIG.json".format(dir_receive, name)
-        path_bin = "{}/{}".format(dir_receive, WidgetNemoAssembler.binary_name(name))
-        dir_upload = str(self.browser_dir_upload.dayu_path)
-        path_resource = "{}/{}__RESOURCE.nemodata".format(dir_upload, name)
-        path_scene = "{}/{}__SCENE.json".format(dir_upload, name)
-        path_shading = "{}/{}__MAT.json".format(dir_upload, name)
-        path_materials = "{}/{}__MAT.ma".format(dir_upload, name)
-
-        def clone(path, dir_to):
-            new_path = "{}/{}".format(dir_to, os.path.basename(path))
-            shutil.copy(path, new_path)
-            return new_path
-
-        import shutil
         try:
-            dir_output = str(self.browser_dir_output.dayu_path)
-            if os.listdir(dir_output):
-                if QMessageBox.StandardButton.No == QMessageBox.question(self, "Export folder not empty",
-                                                                         "Do you really want to overwrite {}?".format(dir_output)):
-                    return
-            path_resource = clone(path_resource, dir_output)
-            path_bin = clone(path_bin, dir_output)
-            path_config = clone(path_config, dir_output)
-            path_shading = clone(path_shading, dir_output)
-
             from nemo.n2m import n2m
-            cmds.file(path_materials, o=True, f=True)
-            cmds.file(rename='{}/{}.ma'.format(dir_output, name))
-            n2m.assemble(path_config, path_scene, path_bin, path_resource, path_shading, name, True, relative_path=self.options_relative.isChecked())
-            cmds.file(save=True, type="mayaAscii")
-            # TODO file just created is highly unstable, reopen it would get fine for unknown reason
-            cmds.file('{}/{}.ma'.format(dir_output, name), open=True, f=True)
+            n2m.assemble(str(self.browser_zip_export.dayu_path),
+                         str(self.browser_zip_binary.dayu_path),
+                         str(self.browser_dir_output.dayu_path),
+                         relative_path=self.options_relative.isChecked())
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
