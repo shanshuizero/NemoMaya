@@ -556,6 +556,37 @@
     ]
   },
   {
+    "name": "clusterHandle",
+    "is_dag": true,
+    "filters": [
+      {"target": "clusterTransforms", "actions": [{"action": "clear"}]}
+    ],
+    "methods": [
+      {
+        "is_dummy": true,
+        "returns": [{"name": "clusterTransforms[0].preWeightedMatrixTransform", "type": "Mat4"}],
+        "parameters": [
+          {"name": "parentMatrix[0]", "type": "Mat4", "outside": true}
+        ]
+      },
+      {
+        "is_dummy": true,
+        "returns": [{"name": "clusterTransforms[0].weightedMatrixTransform", "type": "Mat4"}],
+        "parameters": [
+          {"name": "matrix", "type": "Mat4", "outside": true}
+        ]
+      },
+      {
+        "name": "clusterHandlePostWeightedMatrix",
+        "returns": [{"name": "clusterTransforms[0].postWeightedMatrixTransform", "type": "Mat4"}],
+        "parameters": [
+          {"name": "worldMatrix[0]", "type": "Mat4", "outside": true},
+          {"name": "worldMatrix[0]", "type": "Mat4", "outside": true}
+        ]
+      }
+    ]
+  },
+  {
     "name": "combinationShape",
     "methods": [
       {
@@ -854,7 +885,17 @@
   {
     "name": "follicle",
     "is_dag": true,
+    "filters": [
+      {"target": "outHair","actions": [{"action": "clear"}]},
+      {"target": "outCurve","actions": [{"action": "add", "name": "startPosition"}]}
+    ],
     "methods": [
+      {
+        "is_dummy": true,
+        "returns": [{"name": "outCurve", "type": "Curve"}],
+        "parameters": [{"name": "startPosition", "type": "Curve"}],
+        "ignores": ["degree", "currentPosition"]
+      },
       {
         "name": "follicleTranslateMesh",
         "returns": [{"name": "outTranslate", "type": "Vec3"}],
@@ -933,6 +974,20 @@
         "parameters": [{"name": "inputGeometry", "type": "Mesh"}]
       }
     ]
+  },
+  {
+    "name": "hairSystem",
+    "is_dag": true,
+    "filters": [
+      {
+        "target": "outputHair",
+        "actions": [
+          {"action": "clear"},
+          {"name": "active", "action": "add"}
+        ]
+      }
+    ],
+    "methods": []
   },
   {
     "name": "ikHandle",
@@ -1834,11 +1889,10 @@
         "parameters": [
           {"name": "uvCoord", "type": "Vec2"},
           {"name": "interpolation", "type": "Int"},
-          {"name": "noise", "type": "Float"},
-          {"name": "noiseFreq", "type": "Float"},
           {"name": "colorEntryList[*].position", "type": "Float[]"},
           {"name": "colorEntryList[*].color", "type": "Vec3[]"}
-        ]
+        ],
+        "ignores": ["noiseFreq"]
       }
     ]
   },
@@ -2218,12 +2272,6 @@
   {
     "name": "wrap",
     "is_deformer": true,
-    "filters": [
-      {
-        "target": "outputGeometry[0]",
-        "actions": [{"name": "basePoints[0]", "action": "remove"}]
-      }
-    ],
     "methods": [
       {
         "ignores": [
@@ -2235,6 +2283,7 @@
         "parameters": [
           {"name": "envelope", "type": "Float"},
           {"name": "input[0].inputGeometry", "type": "Shape", "mutable": true},
+          {"name": "basePoints[0]", "type": "Mesh"},
           {"name": "driverPoints[0]", "type": "Mesh"},
           {"name": "geomMatrix", "type": "Mat4"},
           {"name": "maxDistance", "type": "Float"}

@@ -276,6 +276,7 @@ class WidgetNemoExporter(QtWidgets.QWidget):
                        material=True,
                        callback=lambda percent: self.progress_parse.setValue(percent))
         except Exception as e:
+            print("Nemo Export Error:", e)
             QMessageBox.critical(self, "Error", str(e))
         else:
             QMessageBox.information(self, "Success", '{} has been exported to {}'.format(name, path))

@@ -64,14 +64,14 @@ def assemble(path_export, path_binary, dir_output, relative_path=True):
 
     with zipfile.ZipFile(path_binary, 'r') as zip:
         zip.extractall(dir_output)
-        path_config = '{}/{}__config.JSON'.format(dir_output, identifier)
+        path_config = '{}/{}__CONFIG.json'.format(dir_output, identifier)
 
         for x in zip.filelist:
             if x.filename.split('.')[-1] in {'dll', 'so'}:
                 path_bin = x.filename
 
 
-    with open('{}/{}__config.JSON'.format(dir_output, identifier)) as f:
+    with open('{}/{}__CONFIG.json'.format(dir_output, identifier)) as f:
         config = json.load(f)
         config['bin'] = os.path.basename(path_bin) if relative_path else path_bin
         config['resource'] = os.path.basename(path_resource) if relative_path else path_resource
