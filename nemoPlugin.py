@@ -25,6 +25,10 @@ menupath = None
 
 
 def on_load():
+    import os
+    if os.environ.get('NEMO_LOAD_TOPMENU', 'True').lower() in {'false', '0', 'f'}:
+        return
+
     global menupath
     menupath = cmds.menu('nemo', label='Nemo', parent='MayaWindow')
     cmds.menuItem(label='Export', command='import nemo.interface.exporter as exporter; exporter.show()', parent=menupath)
@@ -33,9 +37,11 @@ def on_load():
 
 
 def on_unload():
+    global menupath
     if menupath is None:
         return
     cmds.deleteUI(menupath, menu=True)
+    menupath = None
 
 
 def on_switch():

@@ -47,7 +47,7 @@ class WidgetNemoExporter(QtWidgets.QWidget):
         super(WidgetNemoExporter, self).__init__()
         self.setParent(parent)
         self.setWindowFlags(QtCore.Qt.Window)
-        self.setWindowTitle("Nemo Exporter")
+        self.setWindowTitle("Nemo Exporter v{}".format(WidgetNemoExporter.get_version()))
         self.layout = self.create_ui()
         self.setLayout(self.layout)
         cmds.select(cl=True)
@@ -76,6 +76,14 @@ class WidgetNemoExporter(QtWidgets.QWidget):
 
         if not utils.get_root():
             raise RuntimeError("Should have exactly one top node in hierarchy")
+
+    @staticmethod
+    def get_version():
+        try:
+            import NemoMaya
+            return NemoMaya.get_version()
+        except:
+            return "<unknown>"
 
     def create_controllers(self):
         layout = QtWidgets.QVBoxLayout()

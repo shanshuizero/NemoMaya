@@ -2,11 +2,11 @@
 
 name = 'nemomaya'
 
-version = '0.0.1'
+version = '0.0.9'
 
-description = 'Nemo Maya API'
+description = 'Nemo Maya Client'
 
-authors = ['WuZhen']
+authors = ['wuzhen']
 
 tools = []
 
