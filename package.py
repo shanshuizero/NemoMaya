@@ -10,7 +10,9 @@ authors = ['wuzhen']
 
 tools = []
 
-requires = []
+requires = [
+    'dayu_widgets-0.11.0'
+]
 
 def commands():
     '''
