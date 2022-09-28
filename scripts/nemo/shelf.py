@@ -33,7 +33,7 @@ def on_load():
     menupath = cmds.menu('nemo', label='Nemo', parent='MayaWindow')
     cmds.menuItem(label='Export', command='import nemo.interface.exporter as exporter; exporter.show()', parent=menupath)
     cmds.menuItem(label='Assemble', command='import nemo.interface.assembler as assembler; assembler.show()', parent=menupath)
-    cmds.menuItem(label='Switch', command='import nemoPlugin; nemoPlugin.on_switch()', parent=menupath)
+    cmds.menuItem(label='Switch', command='from nemo import shelf; shelf.on_switch()', parent=menupath)
 
 
 def on_unload():
