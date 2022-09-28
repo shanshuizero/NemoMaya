@@ -5,8 +5,8 @@
 
 - <NEMO_ROOT>/extern: 外部依赖
 - <NEMO_ROOT>/modules: 解析Maya文件所需的配置文件
-- <NEMO_ROOT>/nemo: 主体代码
-- <NEMO_ROOT>/lib: 脚本依赖的Nemo库
+- <NEMO_ROOT>/scripts: 主体代码
+- <NEMO_ROOT>/lib: 预编译的Nemo库
 - <NEMO_ROOT>/plug-ins: Maya插件
 
 ## Table of Contents
@@ -21,7 +21,7 @@
 
 在导出工具中，用户可以通过命名或者选择策略的方式筛选控制器和模型。同时也可以开启或关闭插件。
 
-💡 高级用户可以参考interface直接调用nemo.m2n，直接调用下层方法做更强的自定义。
+> 💡 高级用户可以设置NEMO_LOAD_TOPMENU=0隐藏菜单，参考nemo.interface直接调用nemo.m2n，直接调用下层方法做更强的自定义。
 
 导出成功后的文件：
 
