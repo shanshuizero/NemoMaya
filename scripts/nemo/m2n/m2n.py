@@ -34,7 +34,7 @@ import export_controllers
 import export_materials
 
 
-def export(identifier, controllers, shapes, project_dir, addons=[], debug=False, callback=None, material=False):
+def export(identifier, controllers, shapes, project_dir, addons=[], debug=False, callback=None, material=False, overwrite=False):
     inputs, outputs = get_io(controllers, shapes)
 
     tmpdirname = tempfile.mkdtemp()
@@ -83,7 +83,10 @@ def export(identifier, controllers, shapes, project_dir, addons=[], debug=False,
     path_export = '{}/{}__EXPORT.zip'.format(project_dir, identifier)
     for x in [path_graph, path_export]:
         if os.path.exists(x):
-            raise RuntimeError("{} already exist".format(x))
+            if overwrite:
+                os.remove(x)
+            else:
+                raise RuntimeError("{} already exist".format(x))
     shutil.move(exporter.path_graph(), path_graph)
 
     with zipfile.ZipFile(path_export, 'w') as zip:
@@ -91,3 +94,5 @@ def export(identifier, controllers, shapes, project_dir, addons=[], debug=False,
             zip.write('{}/{}'.format(tmpdirname, x), x)
 
     shutil.rmtree(tmpdirname)
+
+    return path_graph, path_export

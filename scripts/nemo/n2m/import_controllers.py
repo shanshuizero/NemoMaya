@@ -91,6 +91,14 @@ def import_single(root, ctrl_name, data):
         if attributes.get('lock', False) and name != 'visibility':
             cmds.setAttr(plug_name, lock=True)
 
+    for channel in ['Trans', 'Rot', 'Scale']:
+        for comp in ['X', 'Y', 'Z']:
+            for end in ['min', 'max']:
+                attr = '{}{}{}Limit'.format(end, channel, comp)
+                if attr in data:
+                    cmds.setAttr('{}.{}Enable'.format(ctrl_name, attr), True)
+                    cmds.setAttr('{}.{}'.format(ctrl_name, attr), data[attr])
+
     for attr_name in default_attributes:
         cmds.setAttr('{}.{}'.format(ctrl_name, attr_name), keyable=False, channelBox=False, lock=False if attr_name == 'visibility' else True)
 

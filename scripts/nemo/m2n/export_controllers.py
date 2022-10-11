@@ -98,6 +98,13 @@ def export_single_controller(root, ctrl, data):
     if 'rotateOrder' not in attributes and cmds.getAttr('{}.rotateOrder'.format(ctrl)) != 0:
         data['rotateOrder'] = cmds.getAttr('{}.rotateOrder'.format(ctrl))
 
+    for channel in ['Trans', 'Rot', 'Scale']:
+        for comp in ['X', 'Y', 'Z']:
+            for end in ['min', 'max']:
+                if cmds.getAttr('{}.{}{}{}LimitEnable'.format(ctrl, end, channel, comp)):
+                    attr = '{}{}{}Limit'.format(end, channel, comp)
+                    data[attr] = cmds.getAttr('{}.{}'.format(ctrl, attr))
+
     if cmds.getAttr('{}.overrideEnabled'.format(ctrl)):
         data['overrideEnabled'] = True
         data['overrideRGBColors'] = cmds.getAttr('{}.overrideRGBColors'.format(ctrl))

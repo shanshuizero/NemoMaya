@@ -46,21 +46,32 @@ def connect_matrix_to_transform(src, obj):
             cmds.connectAttr(source, dest)
 
 
-def assemble(path_export, path_binary, dir_output, relative_path=True):
+def assemble(path_export, path_binary, dir_output, relative_path=True, save=True):
+    path_shading = None
     with zipfile.ZipFile(path_export, 'r') as zip:
         filename = zip.filelist[0].filename
         identifier = filename[:filename.find('__')]
 
-        for suffix in ['__MAT.ma', '__MAT.json', '__RESOURCE.nemodata']:
+        for suffix in ['__RESOURCE.nemodata']:
             zip.extract(identifier + suffix, dir_output)
 
-        path_material_ma = '{}/{}__MAT.ma'.format(dir_output, identifier)
-        cmds.file(path_material_ma, o=True, f=True)
-        os.remove(path_material_ma)
+        for entry in zip.namelist():
+            if not entry.endswith('__MAT.ma'):
+                continue
+            zip.extract(entry, dir_output)
+            path_material_ma = '{}/{}'.format(dir_output, entry)
+            cmds.file(path_material_ma, o=True, f=True)
+            os.remove(path_material_ma)
+
+        for entry in zip.namelist():
+            if not entry.endswith('__MAT.json'):
+                continue
+            zip.extract(entry, dir_output)
+            path_shading = '{}/{}'.format(dir_output, entry)
+
         import_controllers.import_from(json.loads(zip.read('{}__SCENE.json'.format(identifier))))
 
         path_resource = '{}/{}__RESOURCE.nemodata'.format(dir_output, identifier)
-        path_shading = '{}/{}__MAT.json'.format(dir_output, identifier)
 
     with zipfile.ZipFile(path_binary, 'r') as zip:
         zip.extractall(dir_output)
@@ -69,7 +80,6 @@ def assemble(path_export, path_binary, dir_output, relative_path=True):
         for x in zip.filelist:
             if x.filename.split('.')[-1] in {'dll', 'so'}:
                 path_bin = x.filename
-
 
     with open('{}/{}__CONFIG.json'.format(dir_output, identifier)) as f:
         config = json.load(f)
@@ -149,25 +159,27 @@ def assemble(path_export, path_binary, dir_output, relative_path=True):
 
     cmds.setAttr('{}.write'.format(node), True)
     cmds.setAttr('{}.nemo'.format(node), os.path.basename(path_config) if relative_path else path_config, type="string")
-    cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
 
-    ## assign shaders based on MAT json
-    with open(path_shading) as f:
-        data = json.load(f)
-    shading_data = dict()
-    for shader, members in data.items():
-        if shader == 'lambert1':
-            sg = 'initialShadingGroup'
-        else:
-            sg = cmds.listConnections(shader, t='shadingEngine')
-            if len(sg) != 1:
-                raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
-            sg = sg[0]
-        shading_data[sg] = members
-    for sg, components in shading_data.items():
-        cmds.sets(components, e=True, forceElement=sg)
+    if path_shading:
+        cmds.setAttr('{}.shading'.format(node), os.path.basename(path_shading) if relative_path else path_shading, type="string")
 
-    cmds.setAttr('{}.write'.format(node), False)
+        ## assign shaders based on MAT json
+        with open(path_shading) as f:
+            data = json.load(f)
+        shading_data = dict()
+        for shader, members in data.items():
+            if shader == 'lambert1':
+                sg = 'initialShadingGroup'
+            else:
+                sg = cmds.listConnections(shader, t='shadingEngine')
+                if len(sg) != 1:
+                    raise RuntimeError("Shader {} should have exactly one shading group.".format(shader))
+                sg = sg[0]
+            shading_data[sg] = members
+        for sg, components in shading_data.items():
+            cmds.sets(components, e=True, forceElement=sg)
+
+        cmds.setAttr('{}.write'.format(node), False)
 
     node_proxy = cmds.createNode("mesh", name='NEMO_PROXY__{}'.format(identifier), p=root)
     cmds.connectAttr('{}.proxy'.format(node), '{}.inMesh'.format(node_proxy))
@@ -175,27 +187,31 @@ def assemble(path_export, path_binary, dir_output, relative_path=True):
     cmds.connectAttr('{}.write'.format(node), '{}.inputX'.format(node_reverse))
     cmds.connectAttr('{}.outputX'.format(node_reverse), '{}.visibility'.format(node_proxy))
 
-    import maya.api.OpenMaya as om2
-    num_materials = len(shading_data)
-    points = om2.MPointArray()
-    points.append(om2.MPoint(0, 0, 0))
-    points.append(om2.MPoint(0, 0, 0))
-    points.append(om2.MPoint(0, 0, 0))
-    counts = om2.MIntArray()
-    connections = om2.MIntArray()
-    for _ in range(num_materials):
-        counts.append(3)
-        connections.append(0)
-        connections.append(1)
-        connections.append(2)
-    mesh = om2.MFnMesh()
-    mesh.create(points, counts, connections, parent=om2.MGlobal.getSelectionListByName(root).getDependNode(0))
-    for i, (sg, _) in enumerate(shading_data.items()):
-        cmds.sets("{}.f[{}]".format(mesh.name(), i), e=True, forceElement=sg)
-    cmds.rename(mesh.name(), 'NEMO_MATERIALS__{}'.format(identifier))
+    if path_shading:
+        import maya.api.OpenMaya as om2
+        num_materials = len(shading_data)
+        points = om2.MPointArray()
+        points.append(om2.MPoint(0, 0, 0))
+        points.append(om2.MPoint(0, 0, 0))
+        points.append(om2.MPoint(0, 0, 0))
+        counts = om2.MIntArray()
+        connections = om2.MIntArray()
+        for _ in range(num_materials):
+            counts.append(3)
+            connections.append(0)
+            connections.append(1)
+            connections.append(2)
+        mesh = om2.MFnMesh()
+        mesh.create(points, counts, connections, parent=om2.MGlobal.getSelectionListByName(root).getDependNode(0))
+        for i, (sg, _) in enumerate(shading_data.items()):
+            cmds.sets("{}.f[{}]".format(mesh.name(), i), e=True, forceElement=sg)
+        cmds.rename(mesh.name(), 'NEMO_MATERIALS__{}'.format(identifier))
 
-    cmds.file(rename='{}/{}.ma'.format(dir_output, identifier))
-    cmds.file(save=True, type="mayaAscii")
+    if save:
+        cmds.file(rename='{}/{}.ma'.format(dir_output, identifier))
+        cmds.file(save=True, type="mayaAscii")
 
-    # reopen for a complete and force refresh
-    cmds.file('{}/{}.ma'.format(dir_output, identifier), o=True, f=True)
+        # reopen for a complete and force refresh
+        cmds.file('{}/{}.ma'.format(dir_output, identifier), o=True, f=True)
+
+    return node

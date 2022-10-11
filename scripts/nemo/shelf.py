@@ -33,7 +33,8 @@ def on_load():
     menupath = cmds.menu('nemo', label='Nemo', parent='MayaWindow')
     cmds.menuItem(label='Export', command='import nemo.interface.exporter as exporter; exporter.show()', parent=menupath)
     cmds.menuItem(label='Assemble', command='import nemo.interface.assembler as assembler; assembler.show()', parent=menupath)
-    cmds.menuItem(label='Switch', command='from nemo import shelf; shelf.on_switch()', parent=menupath)
+    cmds.menuItem(label='Switch Preview', command='from nemo import shelf; shelf.on_switch("write")', parent=menupath)
+    cmds.menuItem(label='Switch Cache', command='from nemo import shelf; shelf.on_switch("cache")', parent=menupath)
 
 
 def on_unload():
@@ -44,7 +45,7 @@ def on_unload():
     menupath = None
 
 
-def on_switch():
+def on_switch(attr):
     selection = cmds.ls(sl=True)
     nemo = cmds.ls(selection, type='Nemo')
     for x in selection:
@@ -55,5 +56,5 @@ def on_switch():
         cmds.error("Must select nemo first")
         return
     for x in nemo:
-        cmds.setAttr('{}.write'.format(x), not cmds.getAttr('{}.write'.format(x)))
+        cmds.setAttr('{}.{}'.format(x, attr), not cmds.getAttr('{}.{}'.format(x, attr)))
         cmds.dgdirty(x)

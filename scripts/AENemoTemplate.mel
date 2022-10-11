@@ -26,6 +26,7 @@ global proc AENemoTemplate( string $nodeName )
         editorTemplate -beginLayout "Nemo" -collapse 0;
             editorTemplate -addControl "nemo";
             editorTemplate -addControl "write";
+            editorTemplate -addControl "cache";
             editorTemplate -addControl "shading";
             for($x in `listAttr -ud $nodeName`)
                 editorTemplate -suppress $x;
